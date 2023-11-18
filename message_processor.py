@@ -1,7 +1,6 @@
 from __future__ import annotations
 from typing import Dict, List
 import json
-import time
 from entities import Truck, Load
 from stats import StatCollector
 
@@ -53,7 +52,12 @@ class Notifier:
         return True
 
     # If this trucker recently received many notifications, this load should be better than one of them
-    def better_load_than_previous_loads(self, truck: Truck) -> bool:
+    def better_load_than_previous_loads(self, truck: Truck, load: Load) -> bool:
+        better = True
+        load_heuristic = self.get_heuristic(truck, load)
+        for notification in self.notifications[truck.truck_id]:
+            prev_load = notification.load
+
         return True
 
     def valid_load(self, truck: Truck, load: Load) -> bool:
@@ -61,7 +65,7 @@ class Notifier:
             self.matching_equipment(truck, load)
             and self.matching_length(truck, load)
             and self.positive_profit(truck, load)
-            and self.better_load_than_previous_loads(truck)
+            and self.better_load_than_previous_loads(truck, load)
         )
 
     """
@@ -98,13 +102,26 @@ class Notifier:
         pass
         # file = open("notification_list.csv")
 
+    def get_distance(
+        self, original_lat, original_long, destination_lat, destination_long
+    ) -> float:
+        return (
+            (original_lat - destination_lat) ** 2
+            + (original_long - destination_long) ** 2
+        ) ** 0.5
+
     def truck_load_distance(self, truck: Truck, load: Load) -> float:
         truck_lat = truck.position_latitude
         truck_long = truck.position_longitude
         load_lat = load.origin_latitude
         load_long = load.origin_longitude
         dist = ((truck_lat - load_lat) ** 2 + (truck_long - load_long) ** 2) ** 0.5
-        return dist
+        return self.get_distance(
+            truck.position_latitude,
+            truck.position_longitude,
+            load.destination_latitude,
+            load.destination_longitude,
+        )
 
     def cost_to_pickup(self, truck: Truck, load: Load) -> float:
         return self.truck_load_distance(truck, load) * 1.38
@@ -119,6 +136,8 @@ class Notification:
     def __init__(self, truck: Truck, load: Load) -> None:
         # TODO: Update this value to lastest timestamp?
         self.timestamp = max(truck.timestamp, load.timestamp)
+        self.load = load
+        self.truck = truck
 
 
 class MessageProcessor:
@@ -133,7 +152,6 @@ class MessageProcessor:
     # Message Types: Start, End, Load, Truck
     def add_message(self, message: dict) -> None:
         message_type = message["type"]
-        print(message["type"])
 
         if message_type == "Load":
             self.notifier.add_load(Load(message))
