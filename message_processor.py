@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 import time
 
@@ -6,13 +7,33 @@ class Notifier:
     def __init__(self) -> None:
         pass
 
+    def add_truck(self, truck: Truck) -> None:
+        pass
+
+    def add_load(self, load: Load) -> None:
+        pass
+
+
+class Truck:
+    def __init__(self) -> None:
+        pass
+
+
+class Load:
+    def __init__(self, message: dict) -> None:
+        pass
+
 
 class MessageProcessor:
     def __init__(self) -> None:
         self.notifier = Notifier()
 
     def add_message(self, message: dict) -> None:
+        message_type = message["type"]
         print(message["type"])
+
+        if message_type == "load":
+            self.notifier.add_load(Load(message))
 
 
 def run_test_messages():
