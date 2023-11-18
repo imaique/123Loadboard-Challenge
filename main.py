@@ -15,13 +15,12 @@ import random
 from paho.mqtt import client as mqtt_client
 
 
-broker = 'fortuitous-welder.cloudmqtt.com'
-port = 1883
-topic = "CodeJam"
-# Generate a Client ID with the subscribe prefix.
-client_id = f'kazumike01'
-username = 'CodeJamUser'
-password = '123CodeJam'
+BROKER = "fortuitous-welder.cloudmqtt.com"
+PORT = 1883
+TOPIC = "CodeJam"
+CLIENT_ID = "kazumike01"
+USERNAME = "CodeJamUser"
+PASSWORD = "123CodeJam"
 
 
 def connect_mqtt() -> mqtt_client:
@@ -31,10 +30,10 @@ def connect_mqtt() -> mqtt_client:
         else:
             print("Failed to connect, return code %d\n", rc)
 
-    client = mqtt_client.Client(client_id, clean_session=True)
-    client.username_pw_set(username, password)
+    client = mqtt_client.Client(CLIENT_ID, clean_session=True)
+    client.username_pw_set(USERNAME, PASSWORD)
     client.on_connect = on_connect
-    client.connect(broker, port)
+    client.connect(BROKER, PORT)
     return client
 
 
@@ -42,7 +41,7 @@ def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
         print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
 
-    client.subscribe(topic)
+    client.subscribe(TOPIC)
     client.on_message = on_message
 
 
@@ -52,5 +51,5 @@ def run():
     client.loop_forever()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run()
