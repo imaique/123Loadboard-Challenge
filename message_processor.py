@@ -5,13 +5,24 @@ import time
 
 class Notifier:
     def __init__(self) -> None:
-        pass
+        self.trucks = {}
+        self.load = {}
 
     def add_truck(self, truck: Truck) -> None:
-        pass
+        self.trucks[truck.truckId] = truck
 
     def add_load(self, load: Load) -> None:
+        self.load[load.loadId] = load
+
+    def generate_summary(self) -> None:
+        with open("summary.txt", "w") as file:
+            file.write(f"Processed {len(self.trucks)} trucks\n")
+            file.write(f"Processed {len(self.load)} loads\n")
+            file.close()
+
+    def generate_list(self) -> None:
         pass
+        # file = open("notification_list.csv")
 
 
 class Truck:
@@ -36,9 +47,11 @@ class MessageProcessor:
         if message_type == "Load":
             self.notifier.add_load(Load(message))
         elif message_type == "Truck":
-            pass
+            self.notifier.add_truck(Truck(message))
         elif message_type == "Start":
             self.notifier = Notifier()
+        elif message_type == "End":
+            self.notifier.generate_summary()
 
 
 def run_test_messages():
@@ -105,7 +118,6 @@ def run_test_messages():
     processor = MessageProcessor()
     for message in messages:
         processor.add_message(message)
-        time.sleep(1)
 
 
 if __name__ == "__main__":
