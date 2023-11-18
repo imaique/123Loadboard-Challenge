@@ -1,6 +1,10 @@
 from __future__ import annotations
 import json
 import time
+from entities import Truck, Load
+from stats import StatCollector
+
+collector = StatCollector()
 
 
 class Notifier:
@@ -15,10 +19,10 @@ class Notifier:
         self.notifications = {}
 
     def add_truck(self, truck: Truck) -> None:
-        self.trucks[truck.truckId] = truck
+        self.trucks[truck.truck_id] = truck
 
     def add_load(self, load: Load) -> None:
-        self.load[load.loadId] = load
+        self.load[load.load_id] = load
 
         for truck in self.trucks:
             self
@@ -36,7 +40,7 @@ class Notifier:
         return False
 
     def positive_profit(self, truck: Truck, load: Load) -> bool:
-        if(self.get_profit(truck,load) < 0):
+        if self.get_profit(truck, load) < 0:
             return False
         return True
 
@@ -85,53 +89,27 @@ class Notifier:
 
         pass
         # file = open("notification_list.csv")
+
     def truck_load_distance(self, truck: Truck, load: Load) -> float:
         truck_lat = truck.position_latitude
         truck_long = truck.position_longitude
         load_lat = load.origin_latitude
         load_long = load.origin_longitude
-        dist = ((truck_lat - load_lat)**2 + (truck_long - load_long)**2)**0.5
+        dist = ((truck_lat - load_lat) ** 2 + (truck_long - load_long) ** 2) ** 0.5
         return dist
-    
+
     def cost_to_pickup(self, truck: Truck, load: Load) -> float:
         return self.truck_load_distance(truck, load) * 1.38
-    
+
     def get_profit(self, truck: Truck, load: Load) -> float:
         revenue = load.price
-        cost = self.cost_to_pickup(truck, load)+1.38*load.mileage
+        cost = self.cost_to_pickup(truck, load) + 1.38 * load.mileage
         return revenue - cost
 
 
 class Notification:
     def __init__(self, truck: Truck, load: Load) -> None:
         self.timestamp = time.time()
-
-
-class Truck:
-    def __init__(self, truck_dict: dict) -> None:
-        self.seq = truck_dict["seq"]
-        self.type = truck_dict["type"]
-        self.timestamp = truck_dict["timestamp"]
-        self.truck_id = truck_dict["truckId"]
-        self.position_latitude = truck_dict["positionLatitude"]
-        self.position_longitude = truck_dict["positionLongitude"]
-        self.equip_type = truck_dict["equipType"]
-        self.next_trip_length_preference = truck_dict["nextTripLengthPreference"]
-
-
-class Load:
-    def __init__(self, load_dict: dict) -> None:
-        self.seq = load_dict["seq"]
-        self.type = load_dict["type"]
-        self.timestamp = load_dict["timestamp"]
-        self.load_id = load_dict["loadId"]
-        self.origin_latitude = load_dict["originLatitude"]
-        self.origin_longitude = load_dict["originLongitude"]
-        self.destination_latitude = load_dict["destinationLatitude"]
-        self.destination_longitude = load_dict["destinationLongitude"]
-        self.equipment_type = load_dict["equipmentType"]
-        self.price = load_dict["price"]
-        self.mileage = load_dict["mileage"]
 
 
 class MessageProcessor:
@@ -150,10 +128,12 @@ class MessageProcessor:
         if message_type == "Load":
             self.notifier.add_load(Load(message))
         elif message_type == "Truck":
+            collector.add_truck(message)
             self.notifier.add_truck(Truck(message))
         elif message_type == "Start":
             self.notifier = Notifier()
         elif message_type == "End":
+            collector.to_csv()
             self.notifier.generate_summary()
 
 
