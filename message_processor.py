@@ -153,6 +153,7 @@ class MessageProcessor:
         # print(message)
 
         if message_type == "Load":
+            self.collector.add_load(message)
             self.notifier.add_load(Load(message))
             self.forwarder.add_message(message)
         elif message_type == "Truck":
@@ -164,7 +165,9 @@ class MessageProcessor:
             self.collector = StatCollector()
         elif message_type == "End":
             self.collector.to_csv()
+            self.collector.generate_grid()
             self.notifier.generate_summary()
+
 
 
 def run_test_messages():
