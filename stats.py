@@ -63,8 +63,8 @@ class StatCollector:
                     long_index = int((load_long - min_long)/long_range * 29)
                     # Increment the grid
                     grid[time][lat_index][long_index] += 1
-
+            start_time_string = start_time.strftime("%H_%M")
             image_data = plt.imshow(grid[time], cmap='viridis')
             image_data.set_data(grid[time])
-            plt.savefig(f"grid-{time}th-20min.png")
+            plt.savefig(f"grid-{start_time_string}.png")
     
