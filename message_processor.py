@@ -36,7 +36,7 @@ class Notifier:
         return False
 
     def positive_profit(self, truck: Truck, load: Load) -> bool:
-        if load.price < 0:
+        if(self.get_profit(truck,load) < 0):
             return False
         return True
 
@@ -85,6 +85,21 @@ class Notifier:
 
         pass
         # file = open("notification_list.csv")
+    def truck_load_distance(self, truck: Truck, load: Load) -> float:
+        truck_lat = truck.position_latitude
+        truck_long = truck.position_longitude
+        load_lat = load.origin_latitude
+        load_long = load.origin_longitude
+        dist = ((truck_lat - load_lat)**2 + (truck_long - load_long)**2)**0.5
+        return dist
+    
+    def cost_to_pickup(self, truck: Truck, load: Load) -> float:
+        return self.truck_load_distance(truck, load) * 1.38
+    
+    def get_profit(self, truck: Truck, load: Load) -> float:
+        revenue = load.price
+        cost = self.cost_to_pickup(truck, load)+1.38*load.mileage
+        return revenue - cost
 
 
 class Notification:
