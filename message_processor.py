@@ -15,25 +15,30 @@ class Notifier:
 
 
 class Truck:
-    def __init__(self) -> None:
-        pass
+    def __init__(self, message: dict) -> None:
+        self.__dict__ = message
 
 
 class Load:
     def __init__(self, message: dict) -> None:
-        pass
+        self.__dict__ = message
 
 
 class MessageProcessor:
     def __init__(self) -> None:
         self.notifier = Notifier()
 
+    # Message Types: Start, End, Load, Truck
     def add_message(self, message: dict) -> None:
         message_type = message["type"]
         print(message["type"])
 
-        if message_type == "load":
+        if message_type == "Load":
             self.notifier.add_load(Load(message))
+        elif message_type == "Truck":
+            pass
+        elif message_type == "Start":
+            self.notifier = Notifier()
 
 
 def run_test_messages():
