@@ -42,6 +42,7 @@ def connect_mqtt() -> mqtt_client:
 def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
         message = msg.payload.decode()
+        # this needs to be threaded away
         mess_processor.add_raw_message(message)
         print(f"Received `{message}` from `{msg.topic}` topic")
 

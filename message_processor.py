@@ -1,22 +1,20 @@
 from __future__ import annotations
+from typing import Dict, List
 import json
-import time
 from entities import Truck, Load
 from stats import StatCollector
-
-collector = StatCollector()
 
 
 class Notifier:
     def __init__(self) -> None:
         # <truck id,truck object>
-        self.trucks = {}
+        self.trucks: Dict[int, Truck] = {}
 
         # <load id,load object>
-        self.load = {}
+        self.load: Dict[int, Load] = {}
 
         # <truck id, [notification objects]>
-        self.notifications = {}
+        self.notifications: Dict[int, List[Notification]] = {}
 
     def add_truck(self, truck: Truck) -> None:
         self.trucks[truck.truck_id] = truck
@@ -25,7 +23,16 @@ class Notifier:
         self.load[load.load_id] = load
 
         for truck in self.trucks:
-            self
+            if self.valid_load(truck, load) and self.should_notify(truck, load):
+                self.send_notification(truck, load)
+
+    def send_notification(self, truck: Truck, load: Load) -> None:
+        notification = Notification(truck, load)
+        truck_id = truck.truck_id
+        if truck_id not in self.notifications:
+            self.notifications[truck_id] = []
+
+        self.notifications[truck_id].append(notification)
 
     def matching_equipment(self, truck: Truck, load: Load) -> bool:
         if truck.equip_type == load.equipment_type:
@@ -40,12 +47,17 @@ class Notifier:
         return False
 
     def positive_profit(self, truck: Truck, load: Load) -> bool:
-        if self.get_profit(truck, load) < 0:
+        if self.get_profit(truck, load) <= 0:
             return False
         return True
 
     # If this trucker recently received many notifications, this load should be better than one of them
-    def better_load_than_previous_loads(self, truck: Truck) -> bool:
+    def better_load_than_previous_loads(self, truck: Truck, load: Load) -> bool:
+        better = True
+        load_heuristic = self.get_heuristic(truck, load)
+        for notification in self.notifications[truck.truck_id]:
+            prev_load = notification.load
+
         return True
 
     def valid_load(self, truck: Truck, load: Load) -> bool:
@@ -53,7 +65,7 @@ class Notifier:
             self.matching_equipment(truck, load)
             and self.matching_length(truck, load)
             and self.positive_profit(truck, load)
-            and self.better_load_than_previous_loads(truck)
+            and self.better_load_than_previous_loads(truck, load)
         )
 
     """
@@ -90,13 +102,26 @@ class Notifier:
         pass
         # file = open("notification_list.csv")
 
+    def get_distance(
+        self, original_lat, original_long, destination_lat, destination_long
+    ) -> float:
+        return (
+            (original_lat - destination_lat) ** 2
+            + (original_long - destination_long) ** 2
+        ) ** 0.5
+
     def truck_load_distance(self, truck: Truck, load: Load) -> float:
         truck_lat = truck.position_latitude
         truck_long = truck.position_longitude
         load_lat = load.origin_latitude
         load_long = load.origin_longitude
         dist = ((truck_lat - load_lat) ** 2 + (truck_long - load_long) ** 2) ** 0.5
-        return dist
+        return self.get_distance(
+            truck.position_latitude,
+            truck.position_longitude,
+            load.destination_latitude,
+            load.destination_longitude,
+        )
 
     def cost_to_pickup(self, truck: Truck, load: Load) -> float:
         return self.truck_load_distance(truck, load) * 1.38
@@ -109,12 +134,16 @@ class Notifier:
 
 class Notification:
     def __init__(self, truck: Truck, load: Load) -> None:
-        self.timestamp = time.time()
+        # TODO: Update this value to lastest timestamp?
+        self.timestamp = max(truck.timestamp, load.timestamp)
+        self.load = load
+        self.truck = truck
 
 
 class MessageProcessor:
     def __init__(self) -> None:
         self.notifier = Notifier()
+        self.collector = StatCollector()
 
     def add_raw_message(self, message: str):
         json_msg = json.loads(message)
@@ -127,10 +156,11 @@ class MessageProcessor:
             collector.add_load(message)
             self.notifier.add_load(Load(message))
         elif message_type == "Truck":
-            collector.add_truck(message)
+            self.collector.add_truck(message)
             self.notifier.add_truck(Truck(message))
         elif message_type == "Start":
             self.notifier = Notifier()
+            self.collector = StatCollector()
         elif message_type == "End":
             collector.to_csv()
             collector.generate_grid()
