@@ -31,28 +31,25 @@ class Notifier:
         for truck_id, truck in self.trucks.items():
             self.notify_if_good(truck, load)
 
-
     def send_notification(self, notification: Notification) -> None:
         truck_id = notification.truck.truck_id
         if truck_id not in self.notifications:
             self.notifications[truck_id] = []
         dictionary = vars(notification)
         self.notifications[truck_id].append(notification)
-        
 
-        dictionary['truck_id'] = truck_id
-        dictionary['load_id'] = notification.load.load_id
-        del dictionary['load']
-        del dictionary['truck']
+        dictionary["truck_id"] = truck_id
+        dictionary["load_id"] = notification.load.load_id
+        del dictionary["load"]
+        del dictionary["truck"]
         self.collector.add_notification(dictionary)
-        
 
     def notify_if_good(self, truck: Truck, load: Load) -> bool:
         truck_id = truck.truck_id
         # NON-NEGOTIABLE
         if not truck.matching_equipment(load):
             return False
-        
+
         distance = truck.pickup_distance(load) + load.mileage
         if not truck.matching_distance(distance):
             return False
@@ -60,7 +57,7 @@ class Notifier:
         profit = truck.calculate_profit(load.price, distance)
         if profit <= 0:
             return False
-        
+
         wage = truck.get_hourly_wage(profit, distance)
         if not truck.above_desired_wage(wage):
             return False
@@ -122,14 +119,17 @@ class Notifier:
 
 
 class Notification:
-    def __init__(self, truck: Truck, load: Load, profit: float, distance: float, wage: float) -> None:
+    def __init__(
+        self, truck: Truck, load: Load, profit: float, distance: float, wage: float
+    ) -> None:
         # TODO: Update this value to lastest timestamp?
         self.timestamp = max(truck.timestamp, load.timestamp)
         self.load = load
         self.truck = truck
-        self.profit = profit
-        self.distance = distance
-        self.wage = wage
+        self.price = load.price
+        self.estimated_profit = profit
+        self.estimated_distance = distance
+        self.estimated_wage = wage
 
 
 class MessageProcessor:
@@ -137,7 +137,6 @@ class MessageProcessor:
         self.collector = StatCollector()
         self.forwarder = Forwarder()
         self.notifier = Notifier(self.collector)
-
 
     def add_raw_message(self, message: str):
         json_msg = json.loads(message)
@@ -149,6 +148,7 @@ class MessageProcessor:
         # print(message)
 
         if message_type == "Load":
+            self.collector.add_load(message)
             self.notifier.add_load(Load(message))
             self.forwarder.add_message(message)
         elif message_type == "Truck":
