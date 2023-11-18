@@ -5,14 +5,35 @@ import time
 
 class Notifier:
     def __init__(self) -> None:
+        # <truck id,truck object>
         self.trucks = {}
+
+        # <load id,load object>
         self.load = {}
+
+        # <truck id, [notification objects]>
+        self.notifications = {}
 
     def add_truck(self, truck: Truck) -> None:
         self.trucks[truck.truckId] = truck
 
     def add_load(self, load: Load) -> None:
         self.load[load.loadId] = load
+
+        for truck in self.trucks:
+            self
+
+    def matching_equipment(self, truck: Truck, load: Load) -> bool:
+        return True
+
+    def matching_length(self, truck: Truck, load: Load) -> bool:
+        return True
+
+    def good_profit(self, truck: Truck, load: Load) -> bool:
+        return True
+
+    def should_notify(self, truck: Truck, load: Load) -> bool:
+        return
 
     def generate_summary(self) -> None:
         with open("summary.txt", "w") as file:
@@ -21,8 +42,20 @@ class Notifier:
             file.close()
 
     def generate_list(self) -> None:
+        """[
+        "truck": truck information
+        "notifications": [notifications]
+        ]
+        """
+        # Generate a json file with
+
         pass
         # file = open("notification_list.csv")
+
+
+class Notification:
+    def __init__(self, truck: Truck, load: Load) -> None:
+        pass
 
 
 class Truck:
