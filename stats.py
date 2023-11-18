@@ -1,7 +1,10 @@
 import csv
+import os
 
 
 def dict_to_file(filename: str, dictionary_list: dict):
+    if not os.path.exists("output"):
+        os.makedirs("output")
     if len(dictionary_list) == 0:
         print(f"empty dictionary list for {filename}")
         return
