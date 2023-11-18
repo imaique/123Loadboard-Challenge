@@ -1,5 +1,5 @@
 summary.txt
-
+*.csv
 test.py
 
 # Logs
