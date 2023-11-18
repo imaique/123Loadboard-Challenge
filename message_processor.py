@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Dict, List
 import json
 import time
 from entities import Truck, Load
@@ -8,13 +9,13 @@ from stats import StatCollector
 class Notifier:
     def __init__(self) -> None:
         # <truck id,truck object>
-        self.trucks = {}
+        self.trucks: Dict[int, Truck] = {}
 
         # <load id,load object>
-        self.load = {}
+        self.load: Dict[int, Load] = {}
 
         # <truck id, [notification objects]>
-        self.notifications = {}
+        self.notifications: Dict[int, List[Notification]] = {}
 
     def add_truck(self, truck: Truck) -> None:
         self.trucks[truck.truck_id] = truck
@@ -23,7 +24,16 @@ class Notifier:
         self.load[load.load_id] = load
 
         for truck in self.trucks:
-            self
+            if self.valid_load(truck, load) and self.should_notify(truck, load):
+                self.send_notification(truck, load)
+
+    def send_notification(self, truck: Truck, load: Load) -> None:
+        notification = Notification(truck, load)
+        truck_id = truck.truck_id
+        if truck_id not in self.notifications:
+            self.notifications[truck_id] = []
+
+        self.notifications[truck_id].append(notification)
 
     def matching_equipment(self, truck: Truck, load: Load) -> bool:
         if truck.equip_type == load.equipment_type:
