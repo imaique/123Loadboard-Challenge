@@ -29,7 +29,7 @@ class StatCollector:
         self.trucks.append(truck)
 
     def add_load(self, load: dict) -> None:
-        self.trucks.append(load)
+        self.loads.append(load)
 
     def add_notification(self, notification: dict) -> None:
         print(notification)
