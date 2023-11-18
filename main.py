@@ -10,8 +10,7 @@ QoS: 1
 clientId: "<team name>01" // see important note below
 Topic: CodeJam
 """
-import random
-
+from message_processor import MessageProcessor
 from paho.mqtt import client as mqtt_client
 
 
@@ -21,6 +20,8 @@ TOPIC = "CodeJam"
 CLIENT_ID = "kazumike01"
 USERNAME = "CodeJamUser"
 PASSWORD = "123CodeJam"
+
+mess_processor = MessageProcessor()
 
 
 def connect_mqtt() -> mqtt_client:
@@ -39,7 +40,9 @@ def connect_mqtt() -> mqtt_client:
 
 def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
-        print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
+        message = msg.payload.decode()
+        mess_processor.add_raw_message(message)
+        print(f"Received `{message}` from `{msg.topic}` topic")
 
     client.subscribe(TOPIC)
     client.on_message = on_message

@@ -39,6 +39,10 @@ class MessageProcessor:
     def __init__(self) -> None:
         self.notifier = Notifier()
 
+    def add_raw_message(self, message: str):
+        json_msg = json.loads(message)
+        self.add_message(json_msg)
+
     # Message Types: Start, End, Load, Truck
     def add_message(self, message: dict) -> None:
         message_type = message["type"]
