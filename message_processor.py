@@ -24,12 +24,20 @@ class Notifier:
             self
 
     def matching_equipment(self, truck: Truck, load: Load) -> bool:
-        return True
+        if(truck.equip_type == load.equipment_type):
+            return True
+        return False
 
     def matching_length(self, truck: Truck, load: Load) -> bool:
-        return True
+        if(truck.next_trip_length_preference == "Long" and load.mileage >= 200):
+            return True
+        elif(truck.next_trip_length_preference == "Short" and load.mileage < 200):
+            return True
+        return False
 
     def positive_profit(self, truck: Truck, load: Load) -> bool:
+        if(load.price < 0):
+            return False
         return True
 
     def better_load_than_previous_loads(self, truck: Truck) -> bool:
