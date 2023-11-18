@@ -14,14 +14,7 @@ from message_processor import MessageProcessor
 from paho.mqtt import client as mqtt_client
 import threading
 import queue
-
-
-BROKER = "fortuitous-welder.cloudmqtt.com"
-PORT = 1883
-TOPIC = "CodeJam"
-CLIENT_ID = "kazumike01"
-USERNAME = "CodeJamUser"
-PASSWORD = "123CodeJam"
+from creds import BROKER, PORT, TOPIC, CLIENT_ID, USERNAME, PASSWORD
 
 mess_processor = MessageProcessor()
 

@@ -7,7 +7,7 @@ from forwarder import Forwarder
 
 
 class Notifier:
-    def __init__(self) -> None:
+    def __init__(self, collector: StatCollector) -> None:
         # <truck id,truck object>
         self.trucks: Dict[int, Truck] = {}
 
@@ -16,6 +16,8 @@ class Notifier:
 
         # <truck id, [notification objects]>
         self.notifications: Dict[int, List[Notification]] = {}
+
+        self.collector = collector
 
     def add_truck(self, truck: Truck) -> None:
         self.trucks[truck.truck_id] = truck
@@ -30,34 +32,20 @@ class Notifier:
             self.notify_if_good(truck, load)
 
 
-    def send_notification(self, truck: Truck, load: Load) -> None:
-        notification = Notification(truck, load)
-        truck_id = truck.truck_id
+    def send_notification(self, notification: Notification) -> None:
+        truck_id = notification.truck.truck_id
         if truck_id not in self.notifications:
             self.notifications[truck_id] = []
-
+        dictionary = vars(notification)
         self.notifications[truck_id].append(notification)
-
-
-    # If this trucker recently received many notifications, this load should be better than one of them
-    def better_load_than_previous_loads(self, truck: Truck, load: Load) -> bool:
-        better = True
-        load_heuristic = self.get_heuristic(truck, load)
-
         
 
-
-    """
-    profit
-    final distance from origin (reverse deadhead)
-    deadhead
-    
-    """
-
-    def get_heuristic(self, truck: Truck, load: Load) -> int:
-        # profit = get_profit(truck, load)
-
-        return 30
+        dictionary['truck_id'] = truck_id
+        dictionary['load_id'] = notification.load.load_id
+        del dictionary['load']
+        del dictionary['truck']
+        self.collector.add_notification(dictionary)
+        
 
     def notify_if_good(self, truck: Truck, load: Load) -> bool:
         truck_id = truck.truck_id
@@ -74,12 +62,16 @@ class Notifier:
             return False
         
         wage = truck.get_hourly_wage(profit, distance)
-        self.better_load_than_previous_loads(truck, load)
+        if not truck.above_desired_wage(wage):
+            return False
 
         notify = True
         if truck_id in self.notifications:
             for notification in self.notifications[truck.truck_id]:
                 pass
+
+        notification = Notification(truck, load, profit, distance, wage)
+        self.send_notification(notification)
         return True
 
     def generate_summary(self) -> None:
@@ -130,18 +122,22 @@ class Notifier:
 
 
 class Notification:
-    def __init__(self, truck: Truck, load: Load) -> None:
+    def __init__(self, truck: Truck, load: Load, profit: float, distance: float, wage: float) -> None:
         # TODO: Update this value to lastest timestamp?
         self.timestamp = max(truck.timestamp, load.timestamp)
         self.load = load
         self.truck = truck
+        self.profit = profit
+        self.distance = distance
+        self.wage = wage
 
 
 class MessageProcessor:
     def __init__(self) -> None:
-        self.notifier = Notifier()
         self.collector = StatCollector()
         self.forwarder = Forwarder()
+        self.notifier = Notifier(self.collector)
+
 
     def add_raw_message(self, message: str):
         json_msg = json.loads(message)
@@ -160,7 +156,7 @@ class MessageProcessor:
             self.notifier.add_truck(Truck(message))
             self.forwarder.add_message(message)
         elif message_type == "Start":
-            self.notifier = Notifier()
+            self.notifier = Notifier(self.collector)
             self.collector = StatCollector()
         elif message_type == "End":
             self.collector.to_csv()

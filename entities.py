@@ -12,6 +12,7 @@ class Truck:
         self.position_longitude = truck_dict["positionLongitude"]
         self.equip_type = truck_dict["equipType"]
         self.next_trip_length_preference = truck_dict["nextTripLengthPreference"]
+        self.minimum_wage = 15
     
     def matching_equipment(self, load: Load) -> bool:
         return self.equip_type == load.equipment_type
@@ -26,7 +27,6 @@ class Truck:
     def pickup_distance(self, load: Load) -> float:
         return geopy.distance.geodesic((self.position_latitude, self.position_longitude), (load.origin_latitude, load.origin_longitude)).miles
 
-    
     # Each truck could have their own fuel efficiency which might greatly impact
     # how good a long-distance package is
     def calculate_profit(self, price: float, mileage: float) -> float:
@@ -36,6 +36,9 @@ class Truck:
     def get_hourly_wage(self, profit: float, mileage: float) -> float:
         AVERAGE_SPEED = 65
         return profit / (mileage / AVERAGE_SPEED)
+    
+    def above_desired_wage(self, wage: float) -> bool:
+        return wage >= self.minimum_wage
 
 
 
