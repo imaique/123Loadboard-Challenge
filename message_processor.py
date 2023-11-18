@@ -4,8 +4,6 @@ import time
 from entities import Truck, Load
 from stats import StatCollector
 
-collector = StatCollector()
-
 
 class Notifier:
     def __init__(self) -> None:
@@ -40,7 +38,7 @@ class Notifier:
         return False
 
     def positive_profit(self, truck: Truck, load: Load) -> bool:
-        if self.get_profit(truck, load) < 0:
+        if self.get_profit(truck, load) <= 0:
             return False
         return True
 
@@ -109,12 +107,14 @@ class Notifier:
 
 class Notification:
     def __init__(self, truck: Truck, load: Load) -> None:
-        self.timestamp = time.time()
+        # TODO: Update this value to lastest timestamp?
+        self.timestamp = max(truck.timestamp, load.timestamp)
 
 
 class MessageProcessor:
     def __init__(self) -> None:
         self.notifier = Notifier()
+        self.collector = StatCollector()
 
     def add_raw_message(self, message: str):
         json_msg = json.loads(message)
@@ -128,12 +128,13 @@ class MessageProcessor:
         if message_type == "Load":
             self.notifier.add_load(Load(message))
         elif message_type == "Truck":
-            collector.add_truck(message)
+            self.collector.add_truck(message)
             self.notifier.add_truck(Truck(message))
         elif message_type == "Start":
             self.notifier = Notifier()
+            self.collector = StatCollector()
         elif message_type == "End":
-            collector.to_csv()
+            self.collector.to_csv()
             self.notifier.generate_summary()
 
 
