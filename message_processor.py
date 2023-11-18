@@ -32,6 +32,7 @@ class Notifier:
     def positive_profit(self, truck: Truck, load: Load) -> bool:
         return True
 
+    # If this trucker recently received many notifications, this load should be better than one of them
     def better_load_than_previous_loads(self, truck: Truck) -> bool:
         return True
 
@@ -42,6 +43,14 @@ class Notifier:
             and self.positive_profit(truck, load)
             and self.better_load_than_previous_loads(truck)
         )
+
+    def get_heuristic(self, truck: Truck, load: Load) -> int:
+        return 30
+
+    def should_notify(self, truck: Truck, load: Load) -> bool:
+        HEURISTIC_THRESHOLD = 30
+        heuristic_score = self.get_heuristic(truck, load)
+        return heuristic_score >= HEURISTIC_THRESHOLD
 
     def generate_summary(self) -> None:
         with open("summary.txt", "w") as file:
@@ -63,7 +72,7 @@ class Notifier:
 
 class Notification:
     def __init__(self, truck: Truck, load: Load) -> None:
-        pass
+        self.timestamp = time.time()
 
 
 class Truck:
