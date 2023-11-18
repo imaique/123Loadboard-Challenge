@@ -29,17 +29,17 @@ class Notifier:
     def matching_length(self, truck: Truck, load: Load) -> bool:
         return True
 
-    def good_profit(self, truck: Truck, load: Load) -> bool:
+    def positive_profit(self, truck: Truck, load: Load) -> bool:
         return True
 
     def better_load_than_previous_loads(self, truck: Truck) -> bool:
         return True
 
-    def should_notify(self, truck: Truck, load: Load) -> bool:
+    def valid_load(self, truck: Truck, load: Load) -> bool:
         return (
             self.matching_equipment(truck, load)
             and self.matching_length(truck, load)
-            and self.good_profit(truck, load)
+            and self.positive_profit(truck, load)
             and self.better_load_than_previous_loads(truck)
         )
 
