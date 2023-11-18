@@ -1,3 +1,5 @@
+import time
+
 class Truck:
     def __init__(self, truck_dict: dict) -> None:
         self.seq = truck_dict["seq"]

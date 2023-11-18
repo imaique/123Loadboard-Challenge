@@ -123,9 +123,8 @@ class MessageProcessor:
     # Message Types: Start, End, Load, Truck
     def add_message(self, message: dict) -> None:
         message_type = message["type"]
-        print(message["type"])
-
         if message_type == "Load":
+            collector.add_load(message)
             self.notifier.add_load(Load(message))
         elif message_type == "Truck":
             collector.add_truck(message)
@@ -134,7 +133,9 @@ class MessageProcessor:
             self.notifier = Notifier()
         elif message_type == "End":
             collector.to_csv()
+            collector.generate_grid()
             self.notifier.generate_summary()
+
 
 
 def run_test_messages():

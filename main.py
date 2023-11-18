@@ -24,6 +24,7 @@ PASSWORD = "123CodeJam"
 mess_processor = MessageProcessor()
 
 
+
 def connect_mqtt() -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
