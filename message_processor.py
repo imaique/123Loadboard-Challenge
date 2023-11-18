@@ -4,7 +4,7 @@ import json
 from entities import Truck, Load
 from stats import StatCollector
 from forwarder import Forwarder
-
+from datetime import datetime, timedelta
 
 class Notifier:
     def __init__(self) -> None:
@@ -44,7 +44,15 @@ class Notifier:
         better = True
         load_heuristic = self.get_heuristic(truck, load)
 
-        
+    def toward_dense_area(self, load:Load)->bool:
+        # get expected arrival time
+        # average 64 mph
+        start_time = datetime.fromisoformat(load.timestamp)
+        expected_arrival_time = start_time + timedelta(hours=load.mileage/64)
+
+        # get the grid
+        # grid = 
+        pass
 
 
     """
@@ -146,6 +154,7 @@ class MessageProcessor:
     def add_raw_message(self, message: str):
         json_msg = json.loads(message)
         self.add_message(json_msg)
+        
 
     # Message Types: Start, End, Load, Truck
     def add_message(self, message: dict) -> None:
@@ -167,6 +176,7 @@ class MessageProcessor:
             self.collector.to_csv()
             self.collector.generate_grid()
             self.notifier.generate_summary()
+            print("End")
 
 
 

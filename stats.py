@@ -4,7 +4,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime, timedelta
 
-
+def update_or_create_npz(file_name, new_data):
+    try:
+        # Try to load the existing file
+        with np.load(file_name) as data:
+            # Update the array in the file
+            existing_data = data['grid'][()]
+    except FileNotFoundError:
+        # If the file doesn't exist, create a new one
+        existing_data = np.zeros_like(new_data)
+    
+    updated_data = existing_data + new_data
+    np.savez(file_name, grid=updated_data)
 
 class StatCollector:
     def __init__(self) -> None:
@@ -27,9 +38,10 @@ class StatCollector:
 
     # Create a grid of lat x long with counts of packages in the last hour, every 20 minutes
     def generate_grid(self) -> None:
-        plt.figure()
-        plt.ion()
-        plt.show()
+
+        # plt.figure()
+        # plt.ion()
+        # plt.show()
         # Get the min and max lat and long
         min_lat = min(float(load["originLatitude"]) for load in self.loads)
         max_lat = max([float(load["originLatitude"]) for load in self.loads])
@@ -39,8 +51,6 @@ class StatCollector:
         # Create grids for each 20 minute interval
         grid = np.zeros((72, 30, 30))
         
-        # image_data = plt.imshow(grid[0])
-        # image_data.set_data(grid[0])
 
         lat_range = max_lat - min_lat
         long_range = max_long - min_long
@@ -64,7 +74,10 @@ class StatCollector:
                     # Increment the grid
                     grid[time][lat_index][long_index] += 1
             start_time_string = start_time.strftime("%H_%M")
-            image_data = plt.imshow(grid[time], cmap='viridis')
-            image_data.set_data(grid[time])
-            plt.savefig(f"grid-{start_time_string}.png")
+            # image_data = plt.imshow(grid[time], cmap='viridis')
+            # image_data.set_data(grid[time])
+            # plt.savefig(f"grid-{start_time_string}.png")
+            print("\nhour",start_time_string, ": \n", grid[time])
+        
+        update_or_create_npz("load_grid.npz", grid)
     
