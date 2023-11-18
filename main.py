@@ -12,6 +12,8 @@ Topic: CodeJam
 """
 from message_processor import MessageProcessor
 from paho.mqtt import client as mqtt_client
+import threading
+import queue
 
 
 BROKER = "fortuitous-welder.cloudmqtt.com"
@@ -22,6 +24,18 @@ USERNAME = "CodeJamUser"
 PASSWORD = "123CodeJam"
 
 mess_processor = MessageProcessor()
+
+message_queue = queue.Queue()
+
+
+def process_messages():
+    while True:
+        message = message_queue.get()
+        mess_processor.add_raw_message(message)
+        message_queue.task_done()
+
+
+threading.Thread(target=process_messages, daemon=True).start()
 
 
 def connect_mqtt() -> mqtt_client:
@@ -41,9 +55,7 @@ def connect_mqtt() -> mqtt_client:
 def subscribe(client: mqtt_client):
     def on_message(client, userdata, msg):
         message = msg.payload.decode()
-        # this needs to be threaded away
-        mess_processor.add_raw_message(message)
-        print(f"Received `{message}` from `{msg.topic}` topic")
+        message_queue.put(message)
 
     client.subscribe(TOPIC)
     client.on_message = on_message
@@ -57,3 +69,4 @@ def run():
 
 if __name__ == "__main__":
     run()
+    message_queue.join()

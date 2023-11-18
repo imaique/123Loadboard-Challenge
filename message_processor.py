@@ -3,6 +3,7 @@ from typing import Dict, List
 import json
 from entities import Truck, Load
 from stats import StatCollector
+from forwarder import Forwarder
 
 
 class Notifier:
@@ -22,9 +23,11 @@ class Notifier:
     def add_load(self, load: Load) -> None:
         self.load[load.load_id] = load
 
+        """
         for truck in self.trucks:
             if self.valid_load(truck, load) and self.should_notify(truck, load):
                 self.send_notification(truck, load)
+                """
 
     def send_notification(self, truck: Truck, load: Load) -> None:
         notification = Notification(truck, load)
@@ -144,6 +147,7 @@ class MessageProcessor:
     def __init__(self) -> None:
         self.notifier = Notifier()
         self.collector = StatCollector()
+        self.forwarder = Forwarder()
 
     def add_raw_message(self, message: str):
         json_msg = json.loads(message)
@@ -152,12 +156,15 @@ class MessageProcessor:
     # Message Types: Start, End, Load, Truck
     def add_message(self, message: dict) -> None:
         message_type = message["type"]
+        # print(message)
 
         if message_type == "Load":
             self.notifier.add_load(Load(message))
+            self.forwarder.add_message(message)
         elif message_type == "Truck":
             self.collector.add_truck(message)
             self.notifier.add_truck(Truck(message))
+            self.forwarder.add_message(message)
         elif message_type == "Start":
             self.notifier = Notifier()
             self.collector = StatCollector()
