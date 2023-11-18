@@ -1,9 +1,10 @@
 from __future__ import annotations
 from typing import Dict, List
 import json
-from entities import Truck, Load
+from entities import Truck, Load, Notification, DATE_FORMAT
 from stats import StatCollector
 from forwarder import Forwarder
+from datetime import datetime, timedelta
 
 
 class Notifier:
@@ -35,11 +36,12 @@ class Notifier:
         truck_id = notification.truck.truck_id
         if truck_id not in self.notifications:
             self.notifications[truck_id] = []
-        dictionary = vars(notification)
         self.notifications[truck_id].append(notification)
 
+        dictionary = vars(notification).copy()
         dictionary["truck_id"] = truck_id
         dictionary["load_id"] = notification.load.load_id
+        dictionary["timestamp"] = dictionary["timestamp"].strftime(DATE_FORMAT)
         del dictionary["load"]
         del dictionary["truck"]
         self.collector.add_notification(dictionary)
@@ -61,11 +63,26 @@ class Notifier:
         wage = truck.get_hourly_wage(profit, distance)
         if not truck.above_desired_wage(wage):
             return False
-
-        notify = True
+        CURRENT_TIMESTAMP = max(truck.timestamp, load.timestamp)
+        # do not notify unless this new load is better than any of the ones in my recent notifications
         if truck_id in self.notifications:
-            for notification in self.notifications[truck.truck_id]:
-                pass
+            MAX_NOTIFICATIONS = 3
+            TIME_THRESHOLD = 30  # minutes
+
+            START_TIMESTAMP = CURRENT_TIMESTAMP - timedelta(minutes=TIME_THRESHOLD)
+            latest_loads = []
+            for notification in reversed(self.notifications[truck.truck_id]):
+                if notification.load.timestamp >= START_TIMESTAMP:
+                    latest_loads.append(notification.load)
+                    if len(latest_loads) == MAX_NOTIFICATIONS:
+                        break
+                else:
+                    break
+            # If the max number of notifications is reached, only notify it's better than one of the ones suggested
+            if len(latest_loads) == MAX_NOTIFICATIONS:
+                # Recalculate wage per hour if truck moved since the notification
+                for prev_load in latest_loads:
+                    pass
 
         notification = Notification(truck, load, profit, distance, wage)
         self.send_notification(notification)
@@ -118,20 +135,6 @@ class Notifier:
         return revenue - cost
 
 
-class Notification:
-    def __init__(
-        self, truck: Truck, load: Load, profit: float, distance: float, wage: float
-    ) -> None:
-        # TODO: Update this value to lastest timestamp?
-        self.timestamp = max(truck.timestamp, load.timestamp)
-        self.load = load
-        self.truck = truck
-        self.price = load.price
-        self.estimated_profit = profit
-        self.estimated_distance = distance
-        self.estimated_wage = wage
-
-
 class MessageProcessor:
     def __init__(self) -> None:
         self.collector = StatCollector()
@@ -145,16 +148,16 @@ class MessageProcessor:
     # Message Types: Start, End, Load, Truck
     def add_message(self, message: dict) -> None:
         message_type = message["type"]
-        # print(message)
 
+        # call collector last as it might mutate the dict
         if message_type == "Load":
-            self.collector.add_load(message)
             self.notifier.add_load(Load(message))
             self.forwarder.add_message(message)
+            self.collector.add_load(message)
         elif message_type == "Truck":
-            self.collector.add_truck(message)
             self.notifier.add_truck(Truck(message))
             self.forwarder.add_message(message)
+            self.collector.add_truck(message)
         elif message_type == "Start":
             self.notifier = Notifier(self.collector)
             self.collector = StatCollector()
