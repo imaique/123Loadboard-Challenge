@@ -60,6 +60,7 @@ class Notifier:
         return 30
 
     def notify_if_good(self, truck: Truck, load: Load) -> bool:
+        truck_id = truck.truck_id
         # NON-NEGOTIABLE
         if not truck.matching_equipment(load):
             return False
@@ -76,8 +77,9 @@ class Notifier:
         self.better_load_than_previous_loads(truck, load)
 
         notify = True
-        for notification in self.notifications[truck.truck_id]:
-            pass
+        if truck_id in self.notifications:
+            for notification in self.notifications[truck.truck_id]:
+                pass
         return True
 
     def generate_summary(self) -> None:
