@@ -27,11 +27,23 @@ class Truck:
             return True
         return False
 
+    def same_location(self, truck: Truck) -> bool:
+        return (
+            truck.position_latitude == self.position_latitude
+            and truck.position_longitude == self.position_longitude
+        )
+
     def pickup_distance(self, load: Load) -> float:
         return geopy.distance.geodesic(
             (self.position_latitude, self.position_longitude),
             (load.origin_latitude, load.origin_longitude),
         ).miles
+
+    def get_hourly_from_load(self, load: Load) -> float:
+        distance = self.pickup_distance(load) + load.mileage
+        profit = self.calculate_profit(load.price, distance)
+        hourly = self.get_hourly_wage(profit, distance)
+        return hourly
 
     # Each truck could have their own fuel efficiency which might greatly impact
     # how good a long-distance package is

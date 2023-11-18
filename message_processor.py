@@ -70,19 +70,29 @@ class Notifier:
             TIME_THRESHOLD = 30  # minutes
 
             START_TIMESTAMP = CURRENT_TIMESTAMP - timedelta(minutes=TIME_THRESHOLD)
-            latest_loads = []
+            latest_notifications: List[Notification] = []
             for notification in reversed(self.notifications[truck.truck_id]):
-                if notification.load.timestamp >= START_TIMESTAMP:
-                    latest_loads.append(notification.load)
-                    if len(latest_loads) == MAX_NOTIFICATIONS:
+                if notification.timestamp >= START_TIMESTAMP:
+                    latest_notifications.append(notification)
+                    if len(latest_notifications) == MAX_NOTIFICATIONS:
                         break
                 else:
                     break
             # If the max number of notifications is reached, only notify it's better than one of the ones suggested
-            if len(latest_loads) == MAX_NOTIFICATIONS:
+            if len(latest_notifications) == MAX_NOTIFICATIONS:
                 # Recalculate wage per hour if truck moved since the notification
-                for prev_load in latest_loads:
-                    pass
+                bad_load = True
+                for prev_notification in latest_notifications:
+                    prev_hourly = prev_notification.estimated_wage
+                    if not truck.same_location(prev_notification.truck):
+                        prev_hourly = truck.get_hourly_from_load(prev_notification.load)
+
+                    if wage > prev_hourly:
+                        bad_load = False
+                        break
+
+                if bad_load:
+                    return False
 
         notification = Notification(truck, load, profit, distance, wage)
         self.send_notification(notification)
