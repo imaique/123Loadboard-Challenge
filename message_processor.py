@@ -20,14 +20,15 @@ class Notifier:
     def add_truck(self, truck: Truck) -> None:
         self.trucks[truck.truck_id] = truck
 
+        for load_id, load in self.load.items():
+            self.notify_if_good(truck, load)
+
     def add_load(self, load: Load) -> None:
         self.load[load.load_id] = load
 
-        """
-        for truck in self.trucks:
-            if self.valid_load(truck, load) and self.should_notify(truck, load):
-                self.send_notification(truck, load)
-                """
+        for truck_id, truck in self.trucks.items():
+            self.notify_if_good(truck, load)
+
 
     def send_notification(self, truck: Truck, load: Load) -> None:
         notification = Notification(truck, load)
@@ -37,39 +38,14 @@ class Notifier:
 
         self.notifications[truck_id].append(notification)
 
-    def matching_equipment(self, truck: Truck, load: Load) -> bool:
-        if truck.equip_type == load.equipment_type:
-            return True
-        return False
-
-    def matching_length(self, truck: Truck, load: Load) -> bool:
-        if truck.next_trip_length_preference == "Long" and load.mileage >= 200:
-            return True
-        elif truck.next_trip_length_preference == "Short" and load.mileage < 200:
-            return True
-        return False
-
-    def positive_profit(self, truck: Truck, load: Load) -> bool:
-        if self.get_profit(truck, load) <= 0:
-            return False
-        return True
 
     # If this trucker recently received many notifications, this load should be better than one of them
     def better_load_than_previous_loads(self, truck: Truck, load: Load) -> bool:
         better = True
         load_heuristic = self.get_heuristic(truck, load)
-        for notification in self.notifications[truck.truck_id]:
-            prev_load = notification.load
 
-        return True
+        
 
-    def valid_load(self, truck: Truck, load: Load) -> bool:
-        return (
-            self.matching_equipment(truck, load)
-            and self.matching_length(truck, load)
-            and self.positive_profit(truck, load)
-            and self.better_load_than_previous_loads(truck, load)
-        )
 
     """
     profit
@@ -83,10 +59,26 @@ class Notifier:
 
         return 30
 
-    def should_notify(self, truck: Truck, load: Load) -> bool:
-        HEURISTIC_THRESHOLD = 30
-        heuristic_score = self.get_heuristic(truck, load)
-        return heuristic_score >= HEURISTIC_THRESHOLD
+    def notify_if_good(self, truck: Truck, load: Load) -> bool:
+        # NON-NEGOTIABLE
+        if not truck.matching_equipment(load):
+            return False
+        
+        distance = truck.pickup_distance(load) + load.mileage
+        if not truck.matching_distance(distance):
+            return False
+
+        profit = truck.calculate_profit(load.price, distance)
+        if profit <= 0:
+            return False
+        
+        wage = truck.get_hourly_wage(profit, distance)
+        self.better_load_than_previous_loads(truck, load)
+
+        notify = True
+        for notification in self.notifications[truck.truck_id]:
+            pass
+        return True
 
     def generate_summary(self) -> None:
         with open("summary.txt", "w") as file:

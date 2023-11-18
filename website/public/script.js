@@ -10,8 +10,6 @@
 
     var marker, circle;
 
-    let message_index = 0;
-
     let socket = new WebSocket("ws://127.0.0.1:8081/");
 
     socket.addEventListener('open', function (event) {
