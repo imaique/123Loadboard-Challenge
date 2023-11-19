@@ -63,35 +63,33 @@ class Notifier:
         wage = truck.get_hourly_wage(profit, distance)
         if not truck.above_desired_wage(wage):
             return False
-        CURRENT_TIMESTAMP = max(truck.timestamp, load.timestamp)
+        current_timestamp = max(truck.timestamp, load.timestamp)
         # do not notify unless this new load is better than any of the ones in my recent notifications
         if truck_id in self.notifications:
             MAX_NOTIFICATIONS = 3
             TIME_THRESHOLD = 30  # minutes
 
-            START_TIMESTAMP = CURRENT_TIMESTAMP - timedelta(minutes=TIME_THRESHOLD)
+            START_TIMESTAMP = current_timestamp - timedelta(minutes=TIME_THRESHOLD)
             latest_notifications: List[Notification] = []
             for notification in reversed(self.notifications[truck.truck_id]):
                 if notification.timestamp >= START_TIMESTAMP:
                     latest_notifications.append(notification)
-                    if len(latest_notifications) == MAX_NOTIFICATIONS:
-                        break
                 else:
                     break
             # If the max number of notifications is reached, only notify it's better than one of the ones suggested
-            if len(latest_notifications) == MAX_NOTIFICATIONS:
+            if len(latest_notifications) >= MAX_NOTIFICATIONS:
+                print("enter max")
                 # Recalculate wage per hour if truck moved since the notification
-                bad_load = True
+                better_count = 0
                 for prev_notification in latest_notifications:
                     prev_hourly = prev_notification.estimated_wage
                     if not truck.same_location(prev_notification.truck):
                         prev_hourly = truck.get_hourly_from_load(prev_notification.load)
 
                     if wage > prev_hourly:
-                        bad_load = False
-                        break
+                        better_count += 1
 
-                if bad_load:
+                if len(latest_notifications) - better_count > MAX_NOTIFICATIONS:
                     return False
 
         notification = Notification(truck, load, profit, distance, wage)

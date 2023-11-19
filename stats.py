@@ -35,5 +35,5 @@ class StatCollector:
         self.loads.append(load)
 
     def add_notification(self, notification: dict) -> None:
-        print(notification)
+        # print(notification)
         self.notifications.append(notification)
