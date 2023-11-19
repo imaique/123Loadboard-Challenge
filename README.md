@@ -1,6 +1,8 @@
 # 123Loadboard-Challenge
 
-Make sure to create this creds.py if not present:
+Make sure to create these files if not present:
+
+creds.py
 
 ```
 BROKER = "fortuitous-welder.cloudmqtt.com"
@@ -9,4 +11,13 @@ TOPIC = "CodeJam"
 CLIENT_ID = "kazumike01"
 USERNAME = "CodeJamUser"
 PASSWORD = "123CodeJam"
+```
+
+website/config.json
+
+```
+{
+    "server_port":8080,
+    "client_port":8081
+}
 ```
