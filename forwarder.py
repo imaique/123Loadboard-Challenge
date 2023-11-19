@@ -3,7 +3,7 @@ import threading
 import queue
 import json
 
-PORT = 8080
+PORT = 8082
 
 with open("website/config.json", "r") as config_file:
     config = json.load(config_file)
