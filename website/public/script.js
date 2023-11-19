@@ -270,6 +270,8 @@ function markPosition(message){
             return;
         }  
     }else if(message["type"]=="Start"){
+        clearMarkers(truckMarkerList)
+        clearMarkers(loadMarkerList)
         truckList = {}
         truckMarkerList = {}
         loadList = {}
