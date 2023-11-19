@@ -108,52 +108,6 @@ class Notifier:
         self.send_notification(notification)
         return True
 
-    def generate_summary(self) -> None:
-        with open("summary.txt", "w") as file:
-            file.write(f"Processed {len(self.trucks)} trucks\n")
-            file.write(f"Processed {len(self.load)} loads\n")
-            file.close()
-
-    def generate_list(self) -> None:
-        """[
-        "truck": truck information
-        "notifications": [notifications]
-        ]
-        """
-        # Generate a json file with
-
-        pass
-        # file = open("notification_list.csv")
-
-    def get_distance(
-        self, original_lat, original_long, destination_lat, destination_long
-    ) -> float:
-        return (
-            (original_lat - destination_lat) ** 2
-            + (original_long - destination_long) ** 2
-        ) ** 0.5
-
-    def truck_load_distance(self, truck: Truck, load: Load) -> float:
-        truck_lat = truck.position_latitude
-        truck_long = truck.position_longitude
-        load_lat = load.origin_latitude
-        load_long = load.origin_longitude
-        dist = ((truck_lat - load_lat) ** 2 + (truck_long - load_long) ** 2) ** 0.5
-        return self.get_distance(
-            truck.position_latitude,
-            truck.position_longitude,
-            load.destination_latitude,
-            load.destination_longitude,
-        )
-
-    def cost_to_pickup(self, truck: Truck, load: Load) -> float:
-        return self.truck_load_distance(truck, load) * 1.38
-
-    def get_profit(self, truck: Truck, load: Load) -> float:
-        revenue = load.price
-        cost = self.cost_to_pickup(truck, load) + 1.38 * load.mileage
-        return revenue - cost
-
 
 class MessageProcessor:
     def __init__(self) -> None:
@@ -183,7 +137,6 @@ class MessageProcessor:
             self.collector = StatCollector()
         elif message_type == "End":
             self.collector.to_csv()
-            self.notifier.generate_summary()
 
 
 def run_test_messages():
