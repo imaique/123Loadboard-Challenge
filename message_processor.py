@@ -2,11 +2,11 @@ from __future__ import annotations
 from typing import Dict, List
 import json
 from datetime import timedelta
-import geopy.distance
 
 from entities import Truck, Load, Notification, DATE_FORMAT
 from stats import StatCollector
 from forwarder import Forwarder
+from common import get_miles
 
 
 class Notifier:
@@ -80,16 +80,23 @@ class Notifier:
                     latest_notifications.append(notification)
                 else:
                     break
+
             # If the max number of notifications is reached, only notify it's better than one of the ones suggested
             if len(latest_notifications) >= MAX_NOTIFICATIONS:
                 # Recalculate wage per hour if truck moved since the notification
+                final_distance_from_home = get_miles(
+                    load.get_destination_location(), truck.get_location()
+                )
                 better_count = 0
                 for prev_notification in latest_notifications:
                     prev_hourly = prev_notification.estimated_wage
                     if not truck.same_location(prev_notification.truck):
                         prev_hourly = truck.get_hourly_from_load(prev_notification.load)
 
-                    final_distance_from_home = geopy.distance.geodesic
+                    prev_distance_from_home = get_miles(
+                        prev_notification.load.get_destination_location(),
+                        truck.get_location(),
+                    )
 
                     if wage > prev_hourly:
                         better_count += 1
