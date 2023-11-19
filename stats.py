@@ -35,14 +35,15 @@ class StatCollector:
 
     def add_truck(self, truck: dict) -> None:
         self.trucks.append(truck)
-        self.messages.append(truck)
 
     def add_load(self, load: dict) -> None:
         self.loads.append(load)
-        self.messages.append(load)
 
     def add_notification(self, notification: dict) -> None:
         self.notifications.append(notification)
+
+    def add_message(self, message: dict) -> None:
+        self.messages.append(message)
 
 
 if __name__ == "__main__":

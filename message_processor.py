@@ -43,7 +43,6 @@ class GridMap:
         (row_count, col_count) = self._get_indices((MAX_LATITUDE, MAX_LONGITUDE))
         row_count += 1
         col_count += 1
-        print(f"row_count: {row_count}, col_count: {col_count}")
 
         self.grid: List[List[Cell]] = []
         for _ in range(row_count):
@@ -62,7 +61,6 @@ class GridMap:
 
     def add_load(self, load: Load) -> None:
         (row, col) = self._get_indices((load.origin_latitude, load.origin_longitude))
-        print(f"row: {row}, col: {col}")
         self.grid[row][col].add_load(load)
 
     def get_nearby_price_distance_count(
@@ -250,7 +248,6 @@ class Notifier:
             if nearby_count > 0 and HIGH_PAYING_LOADS_RATIO > 0:
                 avg_profit = profit_sum / nearby_count
                 avg_time_taken = job_time_sum / nearby_count
-                print(f"avg_profit: {avg_profit}")
                 heuristic_profit += HIGH_PAYING_LOADS_RATIO * avg_profit
                 heuristic_time += HIGH_PAYING_LOADS_RATIO * avg_time_taken
 
@@ -286,6 +283,7 @@ class MessageProcessor:
     def add_message(self, message: dict) -> None:
         message_type = message["type"]
         self.forwarder.add_message(message)
+        self.collector.add_message(message)
 
         print(message["seq"])
         # call collector last as it might mutate the dict

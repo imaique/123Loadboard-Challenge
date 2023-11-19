@@ -10,7 +10,7 @@ give a more realistic mileage estimate
 """
 CORRECTION_FACTOR = 1.2
 
-TIME_THRESHOLD = 30
+TIME_THRESHOLD = 60
 """ max desired number of notifications within the above time frame """
 MAX_DESIRED_NOTIFICATIONS = 3
 
