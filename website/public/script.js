@@ -90,8 +90,25 @@ fetch('/config').then(response => response.json()).then(config => {
     });
 
     socket.addEventListener('message', function (event) {
-        let jsonData = JSON.parse(event.data);
-        markPosition(jsonData)
+        let regex = /(?<=\})\{(?=\")/g;
+        let jsonStrings = event.data.split(regex).map((str, index, array) => {
+            if (str[0] !== '{') {
+                return '{' + str;
+            }
+            return str;
+        });
+    
+        // Process each JSON string separately
+        jsonStrings.forEach(jsonString => {
+            try {
+                if (jsonString) { // Check if the string is not empty
+                    let jsonData = JSON.parse(jsonString);
+                    markPosition(jsonData);
+                }
+            } catch (e) {
+                console.error("Error parsing JSON: ", e, "Data: ", jsonString);
+            }
+        });
     });
 });
 
