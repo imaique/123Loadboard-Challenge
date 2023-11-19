@@ -1,6 +1,7 @@
 from __future__ import annotations
-import geopy.distance
 from datetime import datetime
+from common import get_miles
+from filters import FUEL_COST_PER_MILE, AVERAGE_SPEED, MINIMUM_DESIRED_HOURLY_WAGE
 
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
@@ -15,7 +16,9 @@ class Truck:
         self.position_longitude = truck_dict["positionLongitude"]
         self.equip_type = truck_dict["equipType"]
         self.next_trip_length_preference = truck_dict["nextTripLengthPreference"]
-        self.minimum_wage = 15
+        self.minimum_wage = MINIMUM_DESIRED_HOURLY_WAGE
+        self.fuel_cost_per_mile = FUEL_COST_PER_MILE
+        self.average_speed = AVERAGE_SPEED
 
     def matching_equipment(self, load: Load) -> bool:
         return self.equip_type == load.equipment_type
@@ -34,10 +37,10 @@ class Truck:
         )
 
     def pickup_distance(self, load: Load) -> float:
-        return geopy.distance.geodesic(
+        return get_miles(
             (self.position_latitude, self.position_longitude),
             (load.origin_latitude, load.origin_longitude),
-        ).miles
+        )
 
     def get_hourly_from_load(self, load: Load) -> float:
         distance = self.pickup_distance(load) + load.mileage
@@ -45,18 +48,23 @@ class Truck:
         hourly = self.get_hourly_wage(profit, distance)
         return hourly
 
+    def calculate_profit(self, price: float, mileage: float) -> float:
+        return price - self.travel_cost(mileage)
+
     # Each truck could have their own fuel efficiency which might greatly impact
     # how good a long-distance package is
-    def calculate_profit(self, price: float, mileage: float) -> float:
-        FUEL_COST_PER_MILE = 1.38
-        return price - mileage * FUEL_COST_PER_MILE
+    def travel_cost(self, mileage: float) -> float:
+        return mileage * FUEL_COST_PER_MILE
 
     def get_hourly_wage(self, profit: float, mileage: float) -> float:
-        AVERAGE_SPEED = 65
         return profit / (mileage / AVERAGE_SPEED)
 
     def above_desired_wage(self, wage: float) -> bool:
         return wage >= self.minimum_wage
+
+    # lat long
+    def get_location(self) -> (float, float):
+        return (self.position_latitude, self.position_longitude)
 
 
 class Load:
@@ -72,6 +80,17 @@ class Load:
         self.equipment_type = load_dict["equipmentType"]
         self.price = load_dict["price"]
         self.mileage = load_dict["mileage"]
+
+    def get_hourly_rate(self, speed: float) -> float:
+        return self.price / (self.mileage / speed)
+
+    # lat long
+    def get_original_location(self) -> (float, float):
+        return (self.origin_latitude, self.origin_longitude)
+
+    # lat long
+    def get_destination_location(self) -> (float, float):
+        return (self.destination_latitude, self.destination_longitude)
 
 
 class Notification:
