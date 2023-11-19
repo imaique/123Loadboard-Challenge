@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Dict, List
 import json
 from datetime import timedelta, datetime
+import time
 
 from entities import Truck, Load, Notification, DATE_FORMAT
 from stats import StatCollector
@@ -15,7 +16,75 @@ from filters import (
     NEARBY_RANGE,
     DENSITY_RATIO,
     HIGH_PAYING_LOADS_RATIO,
+    GRID_DEGREE_INCREMENT,
+    USE_GRID,
 )
+
+from common import MAX_LATITUDE, MAX_LONGITUDE, MIN_LATITUDE, MIN_LONGITUDE
+
+
+class Cell:
+    def __init__(self) -> None:
+        self.loads: List[Load] = []
+        self.price_sum = 0
+        self.distance_sum = 0
+
+    def add_load(self, load: Load) -> None:
+        self.loads.append(load)
+        self.price_sum += load.price
+        self.distance_sum += load.mileage
+
+    def get_count(self) -> int:
+        return len(self.loads)
+
+
+class GridMap:
+    def __init__(self) -> None:
+        (row_count, col_count) = self._get_indices((MAX_LATITUDE, MAX_LONGITUDE))
+        row_count += 1
+        col_count += 1
+        print(f"row_count: {row_count}, col_count: {col_count}")
+
+        self.grid: List[List[Cell]] = []
+        for _ in range(row_count):
+            self.grid.append([])
+            for _ in range(col_count):
+                self.grid[-1].append(Cell())
+
+        degree_range = get_miles((0, 0), (0, GRID_DEGREE_INCREMENT))
+        self.radius_count = int(NEARBY_RANGE / degree_range) + 1
+
+    def _get_indices(self, coords: (float, float)) -> (int, int):
+        return (
+            int((coords[0] - MIN_LATITUDE) / GRID_DEGREE_INCREMENT),
+            int((coords[1] - MIN_LONGITUDE) / GRID_DEGREE_INCREMENT),
+        )
+
+    def add_load(self, load: Load) -> None:
+        (row, col) = self._get_indices((load.origin_latitude, load.origin_longitude))
+        print(f"row: {row}, col: {col}")
+        self.grid[row][col].add_load(load)
+
+    def get_nearby_price_distance_count(
+        self, location: (float, float, int)
+    ) -> (float, float):
+        (row, col) = self._get_indices(location)
+        min_row = max(0, row - self.radius_count)
+        max_row = min(len(self.grid), row + self.radius_count)
+        min_col = max(0, col - self.radius_count)
+        max_col = min(len(self.grid), col + self.radius_count)
+
+        total_count = 0
+        price_sum = 0
+        distance_sum = 0
+        for i in range(min_row, max_row):
+            for j in range(min_col, max_col):
+                cell = self.grid[i][j]
+                price_sum += cell.price_sum
+                distance_sum += cell.distance_sum
+                total_count += cell.get_count()
+
+        return (price_sum, distance_sum, total_count)
 
 
 class Notifier:
@@ -31,6 +100,8 @@ class Notifier:
         # <truck id, [notification objects]>
         self.notifications: Dict[int, List[Notification]] = {}
 
+        self.grid_map = GridMap()
+
         self.collector = collector
         self.forwarder = forwarder
 
@@ -39,14 +110,23 @@ class Notifier:
         self.trucks[truck.truck_id] = truck
         self.homes[truck_id] = truck.get_location()
 
+        start_time = time.time()
+
         for load in self.loads.values():
             self.notify_if_good(truck, load)
 
+        print(f"time taken: {time.time() - start_time}")
+
     def add_load(self, load: Load) -> None:
         self.loads[load.load_id] = load
+        self.grid_map.add_load(load)
+
+        start_time = time.time()
 
         for truck in self.trucks.values():
             self.notify_if_good(truck, load)
+
+        print(f"time taken: {time.time() - start_time}")
 
     def send_notification(self, notification: Notification) -> None:
         truck_id = notification.truck.truck_id
@@ -142,14 +222,26 @@ class Notifier:
             job_time_sum = 0
             nearby_count = 0
             truck_location = truck.get_location()
-            for nearby_load in self.loads.values():
-                distance = get_miles(
-                    nearby_load.get_original_location(), truck_location
-                )
-                if distance <= NEARBY_RANGE:
-                    nearby_count += 1
-                    profit_sum += truck.calculate_profit(nearby_load.price, distance)
-                    job_time_sum += truck.time_to_travel(nearby_load.mileage)
+            if USE_GRID:
+                (
+                    total_price,
+                    total_distance,
+                    total_count,
+                ) = self.grid_map.get_nearby_price_distance_count(truck.get_location())
+                profit_sum = truck.calculate_profit(total_price, total_distance)
+                job_time_sum = truck.time_to_travel(total_distance)
+                nearby_count = total_count
+            else:
+                for nearby_load in self.loads.values():
+                    distance = get_miles(
+                        nearby_load.get_original_location(), truck_location
+                    )
+                    if distance <= NEARBY_RANGE:
+                        nearby_count += 1
+                        profit_sum += truck.calculate_profit(
+                            nearby_load.price, distance
+                        )
+                        job_time_sum += truck.time_to_travel(nearby_load.mileage)
 
             if DENSITY_RATIO > 0:
                 heuristic_profit += DENSITY_RATIO * profit_sum
@@ -158,7 +250,7 @@ class Notifier:
             if nearby_count > 0 and HIGH_PAYING_LOADS_RATIO > 0:
                 avg_profit = profit_sum / nearby_count
                 avg_time_taken = job_time_sum / nearby_count
-
+                print(f"avg_profit: {avg_profit}")
                 heuristic_profit += HIGH_PAYING_LOADS_RATIO * avg_profit
                 heuristic_time += HIGH_PAYING_LOADS_RATIO * avg_time_taken
 
