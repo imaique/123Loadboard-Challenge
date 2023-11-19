@@ -26,30 +26,90 @@ fetch('/config').then(response => response.json()).then(config => {
 });
 
 function truckClick(truckId){
+    if(document.getElementById("load_info").style.display == "block"){
+        document.getElementById("load_info").style.display = "none";
+    }
+    document.getElementById("truck_info").style.display = "block";
     var truck = truckList[truckId];
     document.getElementById("truck_id").innerHTML = truckId;
     document.getElementById("truck_type").innerHTML = truck.equipType; 
     
     // update notification list
-    var notificationList = document.getElementById("notification_list");
+    var notificationList = document.getElementById("truck_notification_list");
     notificationList.innerHTML = "";
     
     if(notificationForTruck.length == 0){
         console.log("no notifications for truck " + truckId);
-        notificationList.appendChild(document.createElement("li").textContent = "No notifications for this truck");
+        listItem.textContent = "No notifications for this truck";
+        notificationList.appendChild(listItem);
         return;
     }
     // temporarily using trucks instead of notifications
-    for (const [key, value] in notificationForTruck.entries()){
+    for (const notification of notificationForTruck[truckId]){
         var listItem = document.createElement("li");
-        listItem.textContent =  value.timestamp+ ": " + value.load; 
+        listItem.textContent =  notification.timestamp+ ": Load ID " + notification.loadId; 
         notificationList.appendChild(listItem);
     }
+}
+function loadClick(loadId){
+    if(document.getElementById("truck_info").style.display == "block"){
+        document.getElementById("truck_info").style.display = "none";
+    }
+    document.getElementById("load_info").style.display = "block";
+    var load = loadList[loadId];
+    document.getElementById("load_id").innerHTML = loadId;
+    document.getElementById("load_type").innerHTML = load.equipmentType; 
+    
+    // update notification list
+    var notificationList = document.getElementById("load_notification_list");
+    notificationList.innerHTML = "";
+    
+    if(notificationForLoad.length == 0){
+        console.log("no notifications for load " + loadId);
+        listItem.textContent = "No notifications for this truck";
+        notificationList.appendChild(listItem);
+        return;
+    }
+    // temporarily using trucks instead of notifications
+    for (const notification of notificationForLoad[loadId]){
+        var listItem = document.createElement("li");
+        listItem.textContent =  notification.timestamp+ ": Truck ID " + notification.truckId; 
+        notificationList.appendChild(listItem);
+    }
+}
+
+var blinkTruckIcon = L.icon({
+    iconUrl: "/icon_truck_blink.png",
+    iconSize: [38, 38]
+});
+var truckIcon = L.icon({
+    iconUrl: "/icon_truck.png",
+    iconSize: [38, 38]
+});
+
+function blinkTruckMarker(truckId){
+    var originalIcon = truckIcon;
+    truckMarkerList[truckId].setIcon(blinkTruckIcon);
+    setTimeout(truckMarkerList[truckId].setIcon.bind(truckMarkerList[truckId], originalIcon), 500)
+}
+var loadIcon = L.icon({
+    iconUrl: "/icon_load.png",
+    iconSize: [38, 38]
+});
+var blinkLoadIcon = L.icon({
+    iconUrl: "/icon_load_blink.png",
+    iconSize: [38, 38]
+})
+function blinkLoadMarker(loadId){
+    var originalIcon = loadIcon;
+    loadMarkerList[loadId].setIcon(blinkLoadIcon);
+    setTimeout(loadMarkerList[loadId].setIcon.bind(loadMarkerList[loadId], originalIcon), 500)
 }
 
 var truckList = {}
 var truckMarkerList = {}
 var loadList = {}
+var loadMarkerList = {}
 var notificationForTruck = {}
 var notificationForLoad = {}
 
@@ -66,10 +126,7 @@ function markPosition(message){
         if(truck === undefined){
             truckList[truckId] = new Truck(message)
             notificationForTruck[truckId] = []
-            var truckIcon = L.icon({
-                iconUrl: "/icon_truck.png",
-                iconSize: [38, 38]
-            });
+            
             marker = L.marker([lat, long], {
                 icon: truckIcon
                 })
@@ -93,18 +150,13 @@ function markPosition(message){
         
         loadList[loadId] = new Load(message)
         notificationForLoad[loadId] = []
-        // console.log("load added: "+loadList[loadId].id);
-        var loadIcon = L.icon({
-            iconUrl: "/icon_load.png",
-            iconSize: [38, 38]
-        });
+
         marker = L.marker([lat, long], {
             icon: loadIcon
         })
-        // marker.on('click', function(){
-        //     document.getElementById("load_id").innerHTML = loadId;
-        //     document.getElementById("load_type").innerHTML = load.equipmentType; 
-        // });
+        marker.on('click', loadClick.bind(this, loadId));
+        loadMarkerList[loadId] = marker
+        
         marker.addTo(map)
         // var accuracy = 200000
         // circle = L.circle([lat, long], {radius: accuracy})
@@ -117,12 +169,14 @@ function markPosition(message){
 
         if(notificationForTruck[truckId]){
             notificationForTruck[truckId].push(notification);
+            blinkTruckMarker(truckId);
         }else{
             console.error(`TruckId ${truckId} does not exist.`);
             return;
         }
         if(notificationForLoad[loadId]){
             notificationForLoad[loadId].push(notification)
+            blinkLoadMarker(loadId);
         }else{
             console.error(`LoadId ${loadId} does not exist.`);
             return;
