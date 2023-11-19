@@ -23,6 +23,9 @@ class Truck:
     def matching_equipment(self, load: Load) -> bool:
         return self.equip_type == load.equipment_type
 
+    def desires_long(self) -> bool:
+        return self.next_trip_length_preference == "Long"
+
     def matching_distance(self, mileage: float) -> bool:
         if self.next_trip_length_preference == "Long" and mileage >= 200:
             return True
