@@ -7,6 +7,12 @@ from entities import Truck, Load, Notification, DATE_FORMAT
 from stats import StatCollector
 from forwarder import Forwarder
 from common import get_miles
+from filters import (
+    MAX_DESIRED_NOTIFICATIONS,
+    TIME_THRESHOLD,
+    FAR_FROM_HOME_PENALTY_RATIO,
+)
+from datetime import datetime
 
 
 class Notifier:
@@ -25,15 +31,17 @@ class Notifier:
         self.collector = collector
 
     def add_truck(self, truck: Truck) -> None:
+        truck_id = truck.truck_id
         self.trucks[truck.truck_id] = truck
+        self.homes[truck_id] = truck.get_location()
 
-        for load_id, load in self.load.items():
+        for load in self.load.values():
             self.notify_if_good(truck, load)
 
     def add_load(self, load: Load) -> None:
         self.load[load.load_id] = load
 
-        for truck_id, truck in self.trucks.items():
+        for truck in self.trucks.values():
             self.notify_if_good(truck, load)
 
     def send_notification(self, notification: Notification) -> None:
@@ -49,6 +57,27 @@ class Notifier:
         del dictionary["load"]
         del dictionary["truck"]
         self.collector.add_notification(dictionary)
+
+    def get_recent_notifications(
+        self, truck_id: int, current_timestamp: datetime
+    ) -> List[Notification]:
+        start_timestamp = current_timestamp - timedelta(minutes=TIME_THRESHOLD)
+        latest_notifications: List[Notification] = []
+        for notification in reversed(self.notifications[truck_id]):
+            if notification.timestamp >= start_timestamp:
+                latest_notifications.append(notification)
+            else:
+                break
+        return latest_notifications
+
+    def heuristic_hourly_wage(
+        self, profit_and_time: (float, float), home_cost_and_time: (float, float)
+    ) -> float:
+        heuristic_profit = (
+            profit_and_time[0] - FAR_FROM_HOME_PENALTY_RATIO * home_cost_and_time[0]
+        )
+        heuristic_time = profit_and_time[1] + home_cost_and_time[1]
+        return heuristic_profit / heuristic_time
 
     def notify_if_good(self, truck: Truck, load: Load) -> bool:
         truck_id = truck.truck_id
@@ -67,46 +96,58 @@ class Notifier:
         wage = truck.get_hourly_wage(profit, distance)
         if not truck.above_desired_wage(wage):
             return False
-        current_timestamp = max(truck.timestamp, load.timestamp)
+
+        heuristic_wage = self.get_heuristic_wage(truck, load, profit, distance)
+
         # do not notify unless this new load is better than any of the ones in my recent notifications
         if truck_id in self.notifications:
-            MAX_NOTIFICATIONS = 3
-            TIME_THRESHOLD = 30  # minutes
-
-            START_TIMESTAMP = current_timestamp - timedelta(minutes=TIME_THRESHOLD)
-            latest_notifications: List[Notification] = []
-            for notification in reversed(self.notifications[truck.truck_id]):
-                if notification.timestamp >= START_TIMESTAMP:
-                    latest_notifications.append(notification)
-                else:
-                    break
+            current_timestamp = max(truck.timestamp, load.timestamp)
+            latest_notifications = self.get_recent_notifications(
+                truck_id, current_timestamp
+            )
 
             # If the max number of notifications is reached, only notify it's better than one of the ones suggested
-            if len(latest_notifications) >= MAX_NOTIFICATIONS:
-                # Recalculate wage per hour if truck moved since the notification
-                final_distance_from_home = get_miles(
-                    load.get_destination_location(), truck.get_location()
-                )
+            if len(latest_notifications) >= MAX_DESIRED_NOTIFICATIONS:
                 better_count = 0
                 for prev_notification in latest_notifications:
-                    prev_hourly = prev_notification.estimated_wage
+                    prev_heuristic_wage = prev_notification.heuristic_wage
+
+                    # Recalculate wage per hour if truck moved since the notification
                     if not truck.same_location(prev_notification.truck):
-                        prev_hourly = truck.get_hourly_from_load(prev_notification.load)
+                        prev_heuristic_wage = self.get_heuristic_wage(
+                            truck,
+                            prev_notification.load,
+                            prev_notification.estimated_profit,
+                            prev_notification.estimated_distance,
+                        )
 
-                    prev_distance_from_home = get_miles(
-                        prev_notification.load.get_destination_location(),
-                        truck.get_location(),
-                    )
-
-                    if wage > prev_hourly:
+                    if heuristic_wage > prev_heuristic_wage:
                         better_count += 1
 
-                if len(latest_notifications) - better_count > MAX_NOTIFICATIONS:
+                if len(latest_notifications) - better_count > MAX_DESIRED_NOTIFICATIONS:
+                    print("bad load")
                     return False
 
-        notification = Notification(truck, load, profit, distance, wage)
+        notification = Notification(truck, load, profit, distance, wage, heuristic_wage)
         self.send_notification(notification)
         return True
+
+    def get_heuristic_wage(
+        self, truck: Truck, load: Load, profit: float, distance: float
+    ) -> float:
+        home_location = self.homes[truck.truck_id]
+        job_time = truck.time_to_travel(distance)
+
+        final_distance_from_home = get_miles(
+            home_location, load.get_destination_location()
+        )
+        cost_to_home = truck.travel_cost(final_distance_from_home)
+        time_to_home = truck.time_to_travel(final_distance_from_home)
+
+        heuristic_wage = self.heuristic_hourly_wage(
+            (profit, job_time), (cost_to_home, time_to_home)
+        )
+        return heuristic_wage
 
 
 class MessageProcessor:

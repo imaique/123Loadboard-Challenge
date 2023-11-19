@@ -56,8 +56,15 @@ class Truck:
     def travel_cost(self, mileage: float) -> float:
         return mileage * FUEL_COST_PER_MILE
 
+    def hourly_lost(self) -> float:
+        return AVERAGE_SPEED * FUEL_COST_PER_MILE
+
+    # hours
+    def time_to_travel(self, mileage: float) -> float:
+        return mileage / AVERAGE_SPEED
+
     def get_hourly_wage(self, profit: float, mileage: float) -> float:
-        return profit / (mileage / AVERAGE_SPEED)
+        return profit / self.time_to_travel(mileage)
 
     def above_desired_wage(self, wage: float) -> bool:
         return wage >= self.minimum_wage
@@ -95,7 +102,13 @@ class Load:
 
 class Notification:
     def __init__(
-        self, truck: Truck, load: Load, profit: float, distance: float, wage: float
+        self,
+        truck: Truck,
+        load: Load,
+        profit: float,
+        distance: float,
+        wage: float,
+        heuristic_wage: float,
     ) -> None:
         # TODO: Update this value to lastest timestamp?
         self.timestamp = max(truck.timestamp, load.timestamp)
@@ -105,3 +118,4 @@ class Notification:
         self.estimated_profit = profit
         self.estimated_distance = distance
         self.estimated_wage = wage
+        self.heuristic_wage = heuristic_wage
