@@ -1,4 +1,61 @@
 
+document.getElementById('slide-button').addEventListener('click', fadeOutInfo);
+document.getElementById('slide-button-2').addEventListener('click', fadeInInfo);
+
+
+function fadeInInfo() {
+    var leftContainer = document.getElementById('left-container');
+    var rightContainer = document.getElementById('right-container');
+
+    // Slide out left container
+    leftContainer.style.left = '0';
+
+    // Move right container to the middle
+    rightContainer.style.right = '0';
+}
+function fadeOutInfo() {
+    var leftContainer = document.getElementById('left-container');
+    var rightContainer = document.getElementById('right-container');
+
+    // Slide out left container
+    leftContainer.style.left = '-100%';
+
+    // Move right container to the middle
+    rightContainer.style.right = '25%';
+}
+
+/*
+<div class="accordion-item">
+    <h2 class="accordion-header" id="headingOne">
+        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+            Notification for load id 123
+        </button>
+    </h2>
+    <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+    <div class="accordion-body">
+        <strong>This is the first item's accordion body.</strong> It is shown by default, until the collapse plugin adds the appropriate classes that we use to style each element. These classes control the overall appearance, as well as the showing and hiding via CSS transitions. You can modify any of this with custom CSS or overriding our default variables. It's also worth noting that just about any HTML can go within the <code>.accordion-body</code>, though the transition does limit overflow.
+    </div>
+    </div>
+</div>
+*/
+const accordionParent = document.getElementById("accordionParent")
+function addNotification(notification) {
+    let accordion = 
+    `<div class="accordion-item">
+        <h2 class="accordion-header" id="headingOne">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                ${notification.timestamp} Load ID: ${notification.loadId}
+            </button>
+        </h2>
+        <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionParent">
+        <div class="accordion-body">
+            ${loadList[notification.loadId].price}
+        </div>
+        </div>
+    </div>`
+    
+}
+
 // Map initialization 
 var map = L.map('map').setView([41.425058, -87.33366], 5);
 
