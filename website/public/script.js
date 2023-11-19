@@ -59,6 +59,8 @@ var notificationForTruck = {}
 var notificationForLoad = {}
 
 function addNotification(notification, accordionParent) {
+    let load = loadList[notification.loadId]
+    if(load == undefined) return
     let accordion = 
     `<div class="accordion-item">
         <h2 class="accordion-header" id="headingOne">
@@ -66,7 +68,7 @@ function addNotification(notification, accordionParent) {
                 ${notification.timestamp} Load ID: ${notification.loadId}
             </button>
         </h2>
-        <div id="${notification.loadId}m${notification.truckId}" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionParent">
+        <div id="${notification.id}" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionParent">
         <div class="accordion-body">
             ${loadList[notification.loadId].price}
         </div>
@@ -88,8 +90,25 @@ fetch('/config').then(response => response.json()).then(config => {
     });
 
     socket.addEventListener('message', function (event) {
-        let jsonData = JSON.parse(event.data);
-        markPosition(jsonData)
+        let regex = /(?<=\})\{(?=\")/g;
+        let jsonStrings = event.data.split(regex).map((str, index, array) => {
+            if (str[0] !== '{') {
+                return '{' + str;
+            }
+            return str;
+        });
+    
+        // Process each JSON string separately
+        jsonStrings.forEach(jsonString => {
+            try {
+                if (jsonString) { // Check if the string is not empty
+                    let jsonData = JSON.parse(jsonString);
+                    markPosition(jsonData);
+                }
+            } catch (e) {
+                console.error("Error parsing JSON: ", e, "Data: ", jsonString);
+            }
+        });
     });
 });
 
@@ -106,14 +125,15 @@ function truckClick(truckId){
     // var notificationList = document.getElementById("truck_notification_list");
     // notificationList.innerHTML = "";
     const notificationListDOM = document.getElementById("truck_notification_list")
-    if(notificationForTruck.length == 0){
+    const notification_list = notificationForTruck[truckId]
+    if(notification_list != undefined && notification_list.length == 0){
         // console.log("no notifications for truck " + truckId);
         const noNotifHeader = document.createElement("h3");
         noNotifHeader.textContent = "No notifications for this truck";
         notificationListDOM.appendChild(noNotifHeader);
         return;
     }else{
-        for (const notification of notificationForTruck[truckId]){
+        for (const notification of notification_list){
             addNotification(notification, notificationListDOM)
         }
     }
@@ -174,6 +194,11 @@ function blinkLoadMarker(loadId){
     setTimeout(loadMarkerList[loadId].setIcon.bind(loadMarkerList[loadId], originalIcon), 500)
 }
 
+function clearMarkers(markerList) {
+    for(marker in markerList) {
+        map.removeLayer(marker)
+    }
+}
 
 function markPosition(message){
     // console.log(position)
@@ -219,7 +244,7 @@ function markPosition(message){
         marker.on('click', loadClick.bind(this, loadId));
         loadMarkerList[loadId] = marker
         
-        marker.addTo(map)
+        
         // var accuracy = 200000
         // circle = L.circle([lat, long], {radius: accuracy})
         // var featureGroup = L.featureGroup([marker, circle]).addTo(map)
@@ -233,17 +258,18 @@ function markPosition(message){
             notificationForTruck[truckId].push(notification);
             blinkTruckMarker(truckId);
         }else{
-            console.error(`TruckId ${truckId} does not exist.`);
+            //console.error(`TruckId ${truckId} does not exist.`);
             return;
         }
         if(notificationForLoad[loadId]){
             notificationForLoad[loadId].push(notification)
             blinkLoadMarker(loadId);
         }else{
-            console.error(`LoadId ${loadId} does not exist.`);
+            //console.error(`LoadId ${loadId} does not exist.`);
             return;
         }  
     }else if(message["type"]=="Start"){
+        
         truckList = {}
         truckMarkerList = {}
         loadList = {}
@@ -287,5 +313,8 @@ class Notification {
       this.truckId = message["truck_id"];
       this.loadId = message["load_id"];
       this.timestamp = message["timestamp"];
+      this.id = message['id'];
+      this.estimated_hourly_profit = message['estimated_wage']
+      this.estimated_distance = message['estimated_distance']
     }
   }//notification
