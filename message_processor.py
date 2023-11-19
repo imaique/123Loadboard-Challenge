@@ -23,7 +23,7 @@ class Notifier:
         self.homes: Dict[int, (float, float)] = {}
 
         # <load id,load object>
-        self.load: Dict[int, Load] = {}
+        self.loads: Dict[int, Load] = {}
 
         # <truck id, [notification objects]>
         self.notifications: Dict[int, List[Notification]] = {}
@@ -36,11 +36,11 @@ class Notifier:
         self.trucks[truck.truck_id] = truck
         self.homes[truck_id] = truck.get_location()
 
-        for load in self.load.values():
+        for load in self.loads.values():
             self.notify_if_good(truck, load)
 
     def add_load(self, load: Load) -> None:
-        self.load[load.load_id] = load
+        self.loads[load.load_id] = load
 
         for truck in self.trucks.values():
             self.notify_if_good(truck, load)
@@ -79,7 +79,9 @@ class Notifier:
         heuristic_profit = (
             profit_and_time[0] - FAR_FROM_HOME_PENALTY_RATIO * home_cost_and_time[0]
         )
-        heuristic_time = profit_and_time[1] + home_cost_and_time[1]
+        heuristic_time = (
+            profit_and_time[1] + FAR_FROM_HOME_PENALTY_RATIO * home_cost_and_time[1]
+        )
         return heuristic_profit / heuristic_time
 
     def notify_if_good(self, truck: Truck, load: Load) -> bool:
@@ -140,7 +142,13 @@ class Notifier:
         home_location = self.homes[truck.truck_id]
         job_time = truck.time_to_travel(distance)
 
-        density = self.get_load_density_tuple(load.get_destination_location())
+        profit_sum = 0
+        job_time_sum = 0
+        truck_location = truck.get_location()
+        for nearby_load in self.loads.values():
+            distance = get_miles(nearby_load.get_original_location(), truck_location)
+
+            job_time_sum += truck.time_to_travel(load.mileage)
 
         # avg profit
         # avg time taken

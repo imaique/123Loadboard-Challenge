@@ -10,3 +10,6 @@ MAX_DESIRED_NOTIFICATIONS = 3
 # Closer to zero : truckers don't mind going wherever the load brings them
 # Closer to one : truckers really want to stay around where they started their day
 FAR_FROM_HOME_PENALTY_RATIO = 0.2
+
+# Miles. Defines the radius to evaluate areas with high load densities
+DENSITY_THRESHOLD = 30
