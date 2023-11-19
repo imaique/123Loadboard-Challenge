@@ -106,6 +106,7 @@ class Load:
 class Notification:
     def __init__(
         self,
+        notification_id: int,
         truck: Truck,
         load: Load,
         profit: float,
@@ -115,6 +116,7 @@ class Notification:
     ) -> None:
         # TODO: Update this value to lastest timestamp?
         self.timestamp = max(truck.timestamp, load.timestamp)
+        self.id = notification_id
         self.load = load
         self.truck = truck
         self.price = load.price

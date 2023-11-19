@@ -100,6 +100,8 @@ class Notifier:
 
         self.grid_map = GridMap()
 
+        self.notification_id = 1
+
         self.collector = collector
         self.forwarder = forwarder
 
@@ -202,7 +204,10 @@ class Notifier:
                 if len(latest_notifications) - better_count > MAX_DESIRED_NOTIFICATIONS:
                     return False
 
-        notification = Notification(truck, load, profit, distance, wage, heuristic_wage)
+        notification = Notification(
+            self.notification_id, truck, load, profit, distance, wage, heuristic_wage
+        )
+        self.notification_id += 1
         self.send_notification(notification)
         return True
 

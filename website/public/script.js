@@ -66,7 +66,7 @@ function addNotification(notification, accordionParent) {
                 ${notification.timestamp} Load ID: ${notification.loadId}
             </button>
         </h2>
-        <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionParent">
+        <div id="${notification.loadId}m${notification.truckId}" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionParent">
         <div class="accordion-body">
             ${loadList[notification.loadId].price}
         </div>
@@ -88,7 +88,6 @@ fetch('/config').then(response => response.json()).then(config => {
     });
 
     socket.addEventListener('message', function (event) {
-        console.log('Message from server ', event.data);
         let jsonData = JSON.parse(event.data);
         markPosition(jsonData)
     });
@@ -135,7 +134,6 @@ function loadClick(loadId){
     notificationList.innerHTML = "";
     
     if(notificationForLoad.length == 0){
-        console.log("no notifications for load " + loadId);
         listItem.textContent = "No notifications for this truck";
         notificationList.appendChild(listItem);
         return;
