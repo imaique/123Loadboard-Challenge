@@ -193,14 +193,15 @@ class MessageProcessor:
     # Message Types: Start, End, Load, Truck
     def add_message(self, message: dict) -> None:
         message_type = message["type"]
+        self.forwarder.add_message(message)
+
+        print(message["seq"])
         # call collector last as it might mutate the dict
         if message_type == "Load":
             self.notifier.add_load(Load(message))
-            self.forwarder.add_message(message)
             self.collector.add_load(message)
         elif message_type == "Truck":
             self.notifier.add_truck(Truck(message))
-            self.forwarder.add_message(message)
             self.collector.add_truck(message)
         elif message_type == "Start":
             self.collector = StatCollector()
