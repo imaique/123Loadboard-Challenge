@@ -1,5 +1,5 @@
 summary.txt
-output/*.csv
+output/*
 test.py
 creds.py
 # Logs
