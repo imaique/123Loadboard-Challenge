@@ -206,8 +206,8 @@ class MessageProcessor:
             self.collector = StatCollector()
             self.notifier = Notifier(self.collector, self.forwarder)
         elif message_type == "End":
-            self.collector.called_csv = True
             self.collector.to_csv()
+            self.collector.called_csv = True
 
 
 def run_test_messages():
