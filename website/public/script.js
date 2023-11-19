@@ -10,17 +10,22 @@
 
     var marker, circle;
 
-    let socket = new WebSocket("ws://127.0.0.1:8081/");
+    fetch('/config').then(response => response.json()).then(config => {
+        const port = config.clientPort;
+        let socket = new WebSocket("ws://127.0.0.1:" + port);
 
-    socket.addEventListener('open', function (event) {
-        console.log("Connected to WebSocket server");
+        socket.addEventListener('open', function (event) {
+            console.log("Connected to WebSocket server");
+        });
+    
+        socket.addEventListener('message', function (event) {
+            console.log('Message from server ', event.data);
+            let jsonData = JSON.parse(event.data);
+            markPosition(jsonData)
+        });
     });
 
-    socket.addEventListener('message', function (event) {
-        console.log('Message from server ', event.data);
-        let jsonData = JSON.parse(event.data);
-        markPosition(jsonData)
-    });
+
 
     var truckList = []
     var truckMarkerList = []

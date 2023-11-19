@@ -1,16 +1,20 @@
 from __future__ import annotations
 from typing import Dict, List
 import json
+from datetime import timedelta
+import geopy.distance
+
 from entities import Truck, Load, Notification, DATE_FORMAT
 from stats import StatCollector
 from forwarder import Forwarder
-from datetime import datetime, timedelta
 
 
 class Notifier:
     def __init__(self, collector: StatCollector) -> None:
         # <truck id,truck object>
         self.trucks: Dict[int, Truck] = {}
+        # <truck id, home (lat, long)>
+        self.homes: Dict[int, (float, float)] = {}
 
         # <load id,load object>
         self.load: Dict[int, Load] = {}
@@ -85,6 +89,8 @@ class Notifier:
                     prev_hourly = prev_notification.estimated_wage
                     if not truck.same_location(prev_notification.truck):
                         prev_hourly = truck.get_hourly_from_load(prev_notification.load)
+
+                    final_distance_from_home = geopy.distance.geodesic
 
                     if wage > prev_hourly:
                         better_count += 1

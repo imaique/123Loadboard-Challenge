@@ -5,6 +5,10 @@ import json
 
 PORT = 8080
 
+with open("website/config.json", "r") as config_file:
+    config = json.load(config_file)
+    PORT = config["server_port"]
+
 
 class Forwarder:
     def __init__(self) -> None:

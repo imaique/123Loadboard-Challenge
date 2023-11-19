@@ -2,6 +2,9 @@ const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
 const net = require('net');
+const config = require('./config.json');
+const CLIENT_PORT = config.client_port;
+const SERVER_PORT = config.server_port;
 
 const app = express();
 app.use(express.static('public'))
@@ -9,7 +12,7 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 const tcpClient = new net.Socket();
-tcpClient.connect(8082, '127.0.0.1', () => {
+tcpClient.connect(SERVER_PORT, '127.0.0.1', () => {
     console.log('Connected to Python TCP server');
 });
 
@@ -32,7 +35,10 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
 
-const PORT = 8081;
-server.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+app.get('/config', (req, res) => {
+    res.json({ clientPort: CLIENT_PORT });
+});
+
+server.listen(CLIENT_PORT, () => {
+    console.log(`Server is running on http://localhost:${CLIENT_PORT}`);
 });
