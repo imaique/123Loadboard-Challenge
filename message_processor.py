@@ -78,7 +78,7 @@ class Notifier:
 
     def notify_if_good(self, truck: Truck, load: Load) -> bool:
         truck_id = truck.truck_id
-        # NON-NEGOTIABLE
+        # NON-NEGOTIABLES
         if not truck.matching_equipment(load):
             return False
 
@@ -207,7 +207,6 @@ class MessageProcessor:
             self.notifier = Notifier(self.collector, self.forwarder)
         elif message_type == "End":
             self.collector.to_csv()
-            self.collector.called_csv = True
 
 
 def run_test_messages():

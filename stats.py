@@ -23,12 +23,9 @@ class StatCollector:
         self.notifications = []
         self.loads = []
         self.messages = []
-        self.called_csv = False
 
     def to_csv(self):
         print("to csv called!")
-        if self.called_csv:
-            return
         dict_to_file("trucks.csv", self.trucks)
         dict_to_file("notifications.csv", self.notifications)
         dict_to_file("loads.csv", self.loads)
