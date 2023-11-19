@@ -25,7 +25,25 @@
         });
     });
 
-
+    var notificationList = []
+    
+    function truckClick(truckId){
+        console.log(truckId);
+        document.getElementById("truck_id").innerHTML = truckId;
+        document.getElementById("truck_type").innerHTML = truckList[truckId].equipType; 
+        
+        // update notification list
+        var notificationList = document.getElementById("notification_list");
+        notificationList.innerHTML = "";
+        
+        if(truckList.length == 0) return;
+        // temporarily using trucks instead of notifications
+        truckList.forEach(function(truck){
+            var listItem = document.createElement("li");
+            listItem.textContent = truck.id;
+            notificationList.appendChild(listItem);
+        });
+    }
 
     var truckList = []
     var truckMarkerList = []
@@ -34,6 +52,7 @@
         if(message["type"]=="Truck"){
 
             var truckId = message["truckId"]
+            
             var truck = truckList[truckId]
             var lat = message["positionLatitude"]
             if(lat == null) return;
@@ -45,7 +64,11 @@
                     iconUrl: "/icon_truck.png",
                     iconSize: [38, 38]
                 });
-                marker = L.marker([lat, long], {icon: truckIcon})
+                marker = L.marker([lat, long], {
+                    icon: truckIcon,
+                    title: 'Truck '+truckId
+                    })
+                marker.on('click', truckClick.bind(this, truckId));
                 truckMarkerList[truckId] = marker
                 marker.addTo(map)
             }else{
@@ -107,8 +130,9 @@
           }
       }
       class Notification {
-        constructor(truckId, loadId) {
+        constructor(truckId, loadId, timestamp) {
           this.truck = truckId;
           this.load = loadId;
+          this.timestamp = timestamp;
         }
       }

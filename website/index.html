@@ -13,17 +13,30 @@
         body {
             margin: 0;
             padding: 0;
+            display: flex;
         }
 
         #map {
-            width: 100%;
+            flex: 7;
             height: 100vh;
+        }
+        #info_panel {
+            flex: 3;
+            height: 100vh;
+            background-color: #af2b2b;
+            float: right;
         }
     </style>
 </head>
 
 <body>
     <div id="map"></div>
+    <div id = "info_panel">
+        <h1 id="Selected_object">Truck Information</h1>
+        <p>Truck ID: <span id="truck_id"></span></p>
+        <p>Truck Type: <span id="truck_type"></span></p>
+        <ul id="notification_list"></ul>
+    </div>
 </body>
 </html>
 
