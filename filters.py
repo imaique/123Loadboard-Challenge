@@ -1,15 +1,44 @@
-CORRECTION_FACTOR = 1.2
 FUEL_COST_PER_MILE = 1.38
 AVERAGE_SPEED = 65
+
+""" What is the absolute minimum estimated hourly wage of a job """
 MINIMUM_DESIRED_HOURLY_WAGE = 15
+
+""" 
+How much should we multiply the straight line mileage from one location to another to
+give a more realistic mileage estimate
+"""
+CORRECTION_FACTOR = 1.2
+
 TIME_THRESHOLD = 30
-# max desired number of notifications within the above time frame
+""" max desired number of notifications within the above time frame """
 MAX_DESIRED_NOTIFICATIONS = 3
 
-# Multiplies the estimated costs for going back home from a final destination
-# Closer to zero : truckers don't mind going wherever the load brings them
-# Closer to one : truckers really want to stay around where they started their day
-FAR_FROM_HOME_PENALTY_RATIO = 0.2
+""" 
+For truckers with short preference.
+How bad is it to end a delivery far from the first pinged location (hypothesized to be home)? (range: 0-1)
+    0 -> Doesn't matter
+    1 -> Quintessential 
+"""
+FAR_FROM_HOME_PENALTY_RATIO_SHORT = 0.2
 
-# Miles. Defines the radius to evaluate areas with high load densities
-DENSITY_THRESHOLD = 30
+""" 
+For truckers with long preference.
+How bad is it to end a delivery far from the first pinged location (hypothesized to be home)? (range: 0-1)
+    0 -> Doesn't matter
+    1 -> Quintessential 
+"""
+FAR_FROM_HOME_PENALTY_RATIO_LONG = 0
+
+# What should be the radius in miles of what we consider to be "near"
+NEARBY_RANGE = 30
+
+# How important is it to end a delivery in an area with high load density (range: 0-1)
+# 0 -> Doesn't matter
+# 1 -> Quintessential
+DENSITY_RATIO = 0.2
+
+# How important is it to end a delivery in an area with high-paying loads (range: 0-1)
+# 0 -> Doesn't matter
+# 1 -> Quintessential
+HIGH_PAYING_LOADS_RATIO = 0.3
