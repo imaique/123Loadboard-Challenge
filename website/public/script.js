@@ -1,28 +1,41 @@
+// Map initialization 
+var map = L.map('map').setView([41.425058, -87.33366], 5);
 
-document.getElementById('slide-button').addEventListener('click', fadeOutInfo);
-document.getElementById('slide-button-2').addEventListener('click', fadeInInfo);
+//osm layer
+var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+});
+osm.addTo(map);
 
 
-function fadeInInfo() {
-    var leftContainer = document.getElementById('left-container');
-    var rightContainer = document.getElementById('right-container');
+// document.getElementById('slide-button').addEventListener('click', fadeOutInfo);
+// document.getElementById('slide-button-2').addEventListener('click', fadeInInfo);
 
-    // Slide out left container
-    leftContainer.style.left = '0';
 
-    // Move right container to the middle
-    rightContainer.style.right = '0';
-}
-function fadeOutInfo() {
-    var leftContainer = document.getElementById('left-container');
-    var rightContainer = document.getElementById('right-container');
+// function fadeInInfo() {
+//     var leftContainer = document.getElementById('left-container');
+//     var rightContainer = document.getElementById('right-container');
 
-    // Slide out left container
-    leftContainer.style.left = '-100%';
+//     // Slide out left container
+//     leftContainer.style.left = '0';
 
-    // Move right container to the middle
-    rightContainer.style.right = '25%';
-}
+//     // Move right container to the middle
+//     rightContainer.style.right = '0';
+
+//     map.invalidateSize();
+
+// }
+// function fadeOutInfo() {
+//     var leftContainer = document.getElementById('left-container');
+//     var rightContainer = document.getElementById('right-container');
+
+//     // Slide out left container
+//     leftContainer.style.left = '-100%';
+
+//     // Move right container to the middle
+//     rightContainer.style.right = '25%';
+//     map.invalidateSize();
+// }
 
 /*
 <div class="accordion-item">
@@ -38,8 +51,14 @@ function fadeOutInfo() {
     </div>
 </div>
 */
-const accordionParent = document.getElementById("accordionParent")
-function addNotification(notification) {
+var truckList = {}
+var truckMarkerList = {}
+var loadList = {}
+var loadMarkerList = {}
+var notificationForTruck = {}
+var notificationForLoad = {}
+
+function addNotification(notification, accordionParent) {
     let accordion = 
     `<div class="accordion-item">
         <h2 class="accordion-header" id="headingOne">
@@ -53,17 +72,10 @@ function addNotification(notification) {
         </div>
         </div>
     </div>`
-    
+    accordionParent.innerHTML += accordion;
 }
 
-// Map initialization 
-var map = L.map('map').setView([41.425058, -87.33366], 5);
 
-//osm layer
-var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-});
-osm.addTo(map);
 
 var marker, circle;
 
@@ -92,21 +104,22 @@ function truckClick(truckId){
     document.getElementById("truck_type").innerHTML = truck.equipType; 
     
     // update notification list
-    var notificationList = document.getElementById("truck_notification_list");
-    notificationList.innerHTML = "";
-    
+    // var notificationList = document.getElementById("truck_notification_list");
+    // notificationList.innerHTML = "";
+    const notificationListDOM = document.getElementById("truck_notification_list")
     if(notificationForTruck.length == 0){
-        console.log("no notifications for truck " + truckId);
-        listItem.textContent = "No notifications for this truck";
-        notificationList.appendChild(listItem);
+        // console.log("no notifications for truck " + truckId);
+        const noNotifHeader = document.createElement("h3");
+        noNotifHeader.textContent = "No notifications for this truck";
+        notificationListDOM.appendChild(noNotifHeader);
         return;
+    }else{
+        for (const notification of notificationForTruck[truckId]){
+            addNotification(notification, notificationListDOM)
+        }
     }
     // temporarily using trucks instead of notifications
-    for (const notification of notificationForTruck[truckId]){
-        var listItem = document.createElement("li");
-        listItem.textContent =  notification.timestamp+ ": Load ID " + notification.loadId; 
-        notificationList.appendChild(listItem);
-    }
+    
 }
 function loadClick(loadId){
     if(document.getElementById("truck_info").style.display == "block"){
@@ -163,12 +176,6 @@ function blinkLoadMarker(loadId){
     setTimeout(loadMarkerList[loadId].setIcon.bind(loadMarkerList[loadId], originalIcon), 500)
 }
 
-var truckList = {}
-var truckMarkerList = {}
-var loadList = {}
-var loadMarkerList = {}
-var notificationForTruck = {}
-var notificationForLoad = {}
 
 function markPosition(message){
     // console.log(position)
@@ -238,7 +245,13 @@ function markPosition(message){
             console.error(`LoadId ${loadId} does not exist.`);
             return;
         }  
-
+    }else if(message["type"]=="Start"){
+        truckList = {}
+        truckMarkerList = {}
+        loadList = {}
+        loadMarkerList = {}
+        notificationForTruck = {}
+        notificationForLoad = {}
     }else{
         return;
     }
