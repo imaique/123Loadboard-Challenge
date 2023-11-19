@@ -68,7 +68,7 @@ function addNotification(notification, accordionParent) {
                 ${notification.timestamp} Load ID: ${notification.loadId}
             </button>
         </h2>
-        <div id="${notification.id}" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionParent">
+        <div id="${notification.loadId}m${notification.truckId}" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionParent">
         <div class="accordion-body">
             ${loadList[notification.loadId].price}
         </div>
@@ -90,25 +90,8 @@ fetch('/config').then(response => response.json()).then(config => {
     });
 
     socket.addEventListener('message', function (event) {
-        let regex = /(?<=\})\{(?=\")/g;
-        let jsonStrings = event.data.split(regex).map((str, index, array) => {
-            if (str[0] !== '{') {
-                return '{' + str;
-            }
-            return str;
-        });
-    
-        // Process each JSON string separately
-        jsonStrings.forEach(jsonString => {
-            try {
-                if (jsonString) { // Check if the string is not empty
-                    let jsonData = JSON.parse(jsonString);
-                    markPosition(jsonData);
-                }
-            } catch (e) {
-                console.error("Error parsing JSON: ", e, "Data: ", jsonString);
-            }
-        });
+        let jsonData = JSON.parse(event.data);
+        markPosition(jsonData)
     });
 });
 
@@ -154,6 +137,7 @@ function loadClick(loadId){
     notificationList.innerHTML = "";
     
     if(notificationForLoad.length == 0){
+        console.log("no notifications for load " + loadId);
         listItem.textContent = "No notifications for this truck";
         notificationList.appendChild(listItem);
         return;
@@ -269,7 +253,6 @@ function markPosition(message){
             return;
         }  
     }else if(message["type"]=="Start"){
-        
         truckList = {}
         truckMarkerList = {}
         loadList = {}
@@ -281,6 +264,12 @@ function markPosition(message){
     }
     // console.log("Your coordinate is: Lat: "+ lat +" Long: "+ long)
 }//markPosition
+
+function clearMarkers(markerList){
+    for (const [key, marker] of Object.entries(markerList)){
+        marker.remove();
+    }
+}
 
 class Truck {
     constructor(message) {
