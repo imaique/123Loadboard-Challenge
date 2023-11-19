@@ -122,19 +122,34 @@ function truckClick(truckId){
     document.getElementById("truck_type").innerHTML = truck.equipType; 
     
     // update notification list
-    // var notificationList = document.getElementById("truck_notification_list");
-    // notificationList.innerHTML = "";
-    const notificationListDOM = document.getElementById("truck_notification_list")
+    var notificationList = document.getElementById("truck_notification_list");
+    notificationList.innerHTML = "";
+    // const notificationListDOM = document.getElementById("truck_notification_list")
     const notification_list = notificationForTruck[truckId]
     if(notification_list != undefined && notification_list.length == 0){
-        // console.log("no notifications for truck " + truckId);
         const noNotifHeader = document.createElement("h3");
         noNotifHeader.textContent = "No notifications for this truck";
-        notificationListDOM.appendChild(noNotifHeader);
+        notificationList.appendChild(noNotifHeader);
         return;
     }else{
-        for (const notification of notification_list){
-            addNotification(notification, notificationListDOM)
+        for (const notification of notificationForTruck[truckId]){
+            var listItem = document.createElement("li");
+            listItem.textContent =  notification.timestamp + " Load ID " + notification.loadId; 
+
+            var sublist = document.createElement("ul")
+            sublist.style.listStyleType = "none";
+            var subListItem_0 = document.createElement("li");
+            subListItem_0.textContent = "Total price: $" + parseInt(loadList[notification.loadId].price) + ".";
+            var subListItem_1 = document.createElement("li");
+            subListItem_1.textContent = "Estimated hourly profit: $" + parseInt(notification.estimated_hourly_profit) + ".";
+            var subListItem_2 = document.createElement("li");
+            subListItem_2.textContent = "Estimated distance: " + parseInt(notification.estimated_distance) + " miles.";
+            sublist.appendChild(subListItem_0);
+            sublist.appendChild(subListItem_1);
+            sublist.appendChild(subListItem_2);
+    
+            listItem.appendChild(sublist);
+            notificationList.appendChild(listItem);
         }
     }
     // temporarily using trucks instead of notifications
@@ -152,18 +167,33 @@ function loadClick(loadId){
     // update notification list
     var notificationList = document.getElementById("load_notification_list");
     notificationList.innerHTML = "";
-    
-    if(notificationForLoad.length == 0){
-        console.log("no notifications for load " + loadId);
-        listItem.textContent = "No notifications for this truck";
-        notificationList.appendChild(listItem);
+    const notification_list = notificationForLoad[loadId]
+    if(notification_list != undefined && notification_list.length == 0){
+        const noNotifHeader = document.createElement("h3");
+        noNotifHeader.textContent = "No notifications for this load";
+        notificationList.appendChild(noNotifHeader);
         return;
     }
     // temporarily using trucks instead of notifications
     for (const notification of notificationForLoad[loadId]){
         var listItem = document.createElement("li");
-        listItem.textContent =  notification.timestamp+ ": Truck ID " + notification.truckId; 
+        listItem.textContent =  notification.timestamp + " Truck ID " + notification.truckId; 
+
+        var sublist = document.createElement("ul")
+        sublist.style.listStyleType = "none";
+        var subListItem_1 = document.createElement("li");
+        subListItem_1.textContent = "Estimated hourly profit: $" + parseInt(notification.estimated_hourly_profit)+".";
         notificationList.appendChild(listItem);
+        var subListItem_2 = document.createElement("li");
+        subListItem_2.textContent = "Estimated distance: " + parseInt(notification.estimated_distance) + " miles.";
+        sublist.appendChild(subListItem_1);
+        sublist.appendChild(subListItem_2);
+
+        listItem.appendChild(sublist);
+        notificationList.appendChild(listItem);
+
+    //   this.estimated_hourly_profit = message['estimated_wage']
+    //   this.estimated_distance = message['estimated_distance']
     }
 }
 

@@ -29,6 +29,7 @@
             height: 100vh;
             background-color: #FFCE94;
             float: right;
+            overflow: scroll;
         }
         #creds{
             position: absolute;
@@ -37,6 +38,12 @@
             padding: 5px;
             background-color: #af2b2b;
             color: white;
+        }
+        #load_notification_list{
+            list-style-type: none;
+        }
+        #truck_notification_list{
+            list-style-type: none;
         }
     </style>
 </head>
@@ -48,13 +55,13 @@
             <h1>Truck Information</h1>
             <p>Truck ID: <span id="truck_id"></span></p>
             <p>Truck Type: <span id="truck_type"></span></p>
-            <div class = "accordion" id="truck_notification_list"></div>
+            <ul id="truck_notification_list"></ul>
         </div>
         <div id = "load_info" style = "display:none">
             <h1>Load Information</h1>
             <p>Load ID: <span id="load_id"></span></p>
             <p>Load Type: <span id="load_type"></span></p>
-            <div class = "accordion" id="load_notification_list"></div>
+            <ul id = "load_notification_list"></ul>
         </div>
     </div>
     <div id="creds"> Icons made by <a href="https://www.flaticon.com/authors/chanut-is-industries" title="Chanut-is-Industries"> Chanut-is-Industries </a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com'</a></div>
