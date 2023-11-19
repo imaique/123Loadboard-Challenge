@@ -55,6 +55,7 @@ class Notifier:
         dictionary["truck_id"] = truck_id
         dictionary["load_id"] = notification.load.load_id
         dictionary["timestamp"] = dictionary["timestamp"].strftime(DATE_FORMAT)
+        dictionary["type"] = "Notification"
         del dictionary["load"]
         del dictionary["truck"]
         self.collector.add_notification(dictionary)
@@ -127,7 +128,6 @@ class Notifier:
                         better_count += 1
 
                 if len(latest_notifications) - better_count > MAX_DESIRED_NOTIFICATIONS:
-                    print("bad load")
                     return False
 
         notification = Notification(truck, load, profit, distance, wage, heuristic_wage)
@@ -139,6 +139,8 @@ class Notifier:
     ) -> float:
         home_location = self.homes[truck.truck_id]
         job_time = truck.time_to_travel(distance)
+
+        density = self.get_load_density_tuple(load.get_destination_location())
 
         # avg profit
         # avg time taken
