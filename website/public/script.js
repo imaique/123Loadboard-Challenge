@@ -244,7 +244,7 @@ function markPosition(message){
         })
         marker.on('click', loadClick.bind(this, loadId));
         loadMarkerList[loadId] = marker
-        
+        marker.addTo(map)
         
         // var accuracy = 200000
         // circle = L.circle([lat, long], {radius: accuracy})
