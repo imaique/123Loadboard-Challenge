@@ -23,12 +23,14 @@ class StatCollector:
         self.notifications = []
         self.loads = []
         self.messages = []
+        self.discarded_notifs = []
 
     def to_csv(self):
         print("to csv called!")
         dict_to_file("trucks.csv", self.trucks)
         dict_to_file("notifications.csv", self.notifications)
         dict_to_file("loads.csv", self.loads)
+        dict_to_file("discarded_notifications.csv", self.discarded_notifs)
 
         with open(f"output/messages.json", "w", newline="") as output_file:
             json.dump(self.messages, output_file)
@@ -45,23 +47,5 @@ class StatCollector:
     def add_message(self, message: dict) -> None:
         self.messages.append(message)
 
-
-if __name__ == "__main__":
-    f = open("output/messages.json")
-
-    # returns JSON object as
-    # a dictionary
-    messages = json.load(f)
-
-    # Iterating through the json
-    # list
-    collector = StatCollector()
-    for message in messages:
-        message_type = message["type"]
-        if message_type == "Truck":
-            collector.add_truck(message)
-        elif message_type == "Load":
-            collector.add_load(message)
-
-    # Closing file
-    f.close()
+    def add_discarded(self, discarded: dict) -> None:
+        self.discarded_notifs.append(discarded)

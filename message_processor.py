@@ -4,8 +4,8 @@ import json
 from datetime import timedelta, datetime
 import time
 
-from entities import Truck, Load, Notification, DATE_FORMAT
 from stats import StatCollector
+from entities import Truck, Load, Notification, DiscardedNotification, DATE_FORMAT
 from forwarder import Forwarder
 from common import get_miles
 from filters import (
@@ -113,7 +113,10 @@ class Notifier:
         start_time = time.time()
 
         for load in self.loads.values():
-            self.notify_if_good(truck, load)
+            result = self.notify_if_good(truck, load)
+            if not result:
+                discarded = DiscardedNotification(truck, load)
+                self.collector.add_discarded(vars(discarded))
 
         print(f"time taken: {time.time() - start_time}")
 

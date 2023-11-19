@@ -103,6 +103,13 @@ class Load:
         return (self.destination_latitude, self.destination_longitude)
 
 
+class DiscardedNotification:
+    def __init__(self, truck: Truck, load: Load) -> None:
+        self.timestamp = max(truck.timestamp, load.timestamp)
+        self.truck_id = truck.truck_id
+        self.load_id = load.load_id
+
+
 class Notification:
     def __init__(
         self,
