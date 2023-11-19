@@ -1,5 +1,6 @@
 import csv
 import os
+import json
 
 
 def dict_to_file(filename: str, dictionary_list: dict):
@@ -21,19 +22,48 @@ class StatCollector:
         self.trucks = []
         self.notifications = []
         self.loads = []
+        self.messages = []
+        self.called_csv = False
 
     def to_csv(self):
-        print("Called to csv!")
+        print("to csv called!")
+        if self.called_csv:
+            return
         dict_to_file("trucks.csv", self.trucks)
         dict_to_file("notifications.csv", self.notifications)
         dict_to_file("loads.csv", self.loads)
 
+        with open(f"output/messages.json", "w", newline="") as output_file:
+            json.dump(self.messages, output_file)
+
     def add_truck(self, truck: dict) -> None:
         self.trucks.append(truck)
+        self.messages.append(truck)
 
     def add_load(self, load: dict) -> None:
         self.loads.append(load)
+        self.messages.append(load)
 
     def add_notification(self, notification: dict) -> None:
-        print(notification)
         self.notifications.append(notification)
+
+
+if __name__ == "__main__":
+    f = open("output/messages.json")
+
+    # returns JSON object as
+    # a dictionary
+    messages = json.load(f)
+
+    # Iterating through the json
+    # list
+    collector = StatCollector()
+    for message in messages:
+        message_type = message["type"]
+        if message_type == "Truck":
+            collector.add_truck(message)
+        elif message_type == "Load":
+            collector.add_load(message)
+
+    # Closing file
+    f.close()
