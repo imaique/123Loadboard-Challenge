@@ -82,7 +82,6 @@ class Notifier:
                     break
             # If the max number of notifications is reached, only notify it's better than one of the ones suggested
             if len(latest_notifications) >= MAX_NOTIFICATIONS:
-                print("enter max")
                 # Recalculate wage per hour if truck moved since the notification
                 better_count = 0
                 for prev_notification in latest_notifications:
