@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Dict, List
 import json
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from entities import Truck, Load, Notification, DATE_FORMAT
 from stats import StatCollector
@@ -10,9 +10,12 @@ from common import get_miles
 from filters import (
     MAX_DESIRED_NOTIFICATIONS,
     TIME_THRESHOLD,
-    FAR_FROM_HOME_PENALTY_RATIO,
+    FAR_FROM_HOME_PENALTY_RATIO_SHORT,
+    FAR_FROM_HOME_PENALTY_RATIO_LONG,
+    NEARBY_RANGE,
+    DENSITY_RATIO,
+    HIGH_PAYING_LOADS_RATIO,
 )
-from datetime import datetime
 
 
 class Notifier:
@@ -73,17 +76,6 @@ class Notifier:
                 break
         return latest_notifications
 
-    def heuristic_hourly_wage(
-        self, profit_and_time: (float, float), home_cost_and_time: (float, float)
-    ) -> float:
-        heuristic_profit = (
-            profit_and_time[0] - FAR_FROM_HOME_PENALTY_RATIO * home_cost_and_time[0]
-        )
-        heuristic_time = (
-            profit_and_time[1] + FAR_FROM_HOME_PENALTY_RATIO * home_cost_and_time[1]
-        )
-        return heuristic_profit / heuristic_time
-
     def notify_if_good(self, truck: Truck, load: Load) -> bool:
         truck_id = truck.truck_id
         # NON-NEGOTIABLE
@@ -142,27 +134,50 @@ class Notifier:
         home_location = self.homes[truck.truck_id]
         job_time = truck.time_to_travel(distance)
 
-        profit_sum = 0
-        job_time_sum = 0
-        truck_location = truck.get_location()
-        for nearby_load in self.loads.values():
-            distance = get_miles(nearby_load.get_original_location(), truck_location)
+        heuristic_profit = profit
+        heuristic_time = job_time
 
-            job_time_sum += truck.time_to_travel(load.mileage)
+        if DENSITY_RATIO > 0 or HIGH_PAYING_LOADS_RATIO > 0:
+            profit_sum = 0
+            job_time_sum = 0
+            nearby_count = 0
+            truck_location = truck.get_location()
+            for nearby_load in self.loads.values():
+                distance = get_miles(
+                    nearby_load.get_original_location(), truck_location
+                )
+                if distance <= NEARBY_RANGE:
+                    nearby_count += 1
+                    profit_sum += truck.calculate_profit(nearby_load.price, distance)
+                    job_time_sum += truck.time_to_travel(nearby_load.mileage)
 
-        # avg profit
-        # avg time taken
+            if DENSITY_RATIO > 0:
+                heuristic_profit += DENSITY_RATIO * profit_sum
+                heuristic_time += DENSITY_RATIO * job_time_sum
 
-        final_distance_from_home = get_miles(
-            home_location, load.get_destination_location()
+            if nearby_count > 0 and HIGH_PAYING_LOADS_RATIO > 0:
+                avg_profit = profit_sum / nearby_count
+                avg_time_taken = job_time_sum / nearby_count
+
+                heuristic_profit += HIGH_PAYING_LOADS_RATIO * avg_profit
+                heuristic_time += HIGH_PAYING_LOADS_RATIO * avg_time_taken
+
+        FAR_FROM_HOME_RATIO = (
+            FAR_FROM_HOME_PENALTY_RATIO_LONG
+            if truck.desires_long()
+            else FAR_FROM_HOME_PENALTY_RATIO_SHORT
         )
-        cost_to_home = truck.travel_cost(final_distance_from_home)
-        time_to_home = truck.time_to_travel(final_distance_from_home)
 
-        heuristic_wage = self.heuristic_hourly_wage(
-            (profit, job_time), (cost_to_home, time_to_home)
-        )
-        return heuristic_wage
+        if FAR_FROM_HOME_RATIO > 0:
+            final_distance_from_home = get_miles(
+                home_location, load.get_destination_location()
+            )
+            cost_to_home = truck.travel_cost(final_distance_from_home)
+            time_to_home = truck.time_to_travel(final_distance_from_home)
+            heuristic_profit -= FAR_FROM_HOME_RATIO * cost_to_home
+            heuristic_time += FAR_FROM_HOME_RATIO * time_to_home
+
+        return heuristic_profit / heuristic_time
 
 
 class MessageProcessor:
