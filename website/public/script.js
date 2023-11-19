@@ -22,17 +22,88 @@
         markPosition(jsonData)
     });
 
+    var truckList = []
+    var truckMarkerList = []
     function markPosition(message){
         // console.log(position)
-        var lat = message["positionLatitude"]
+        if(message["type"]=="Truck"){
 
-        if(lat == null) return;
-        var long = message["positionLongitude"]
-        var accuracy = 5000
-        marker = L.marker([lat, long])
-        circle = L.circle([lat, long], {radius: accuracy})
+            var truckId = message["truckId"]
+            var truck = truckList[truckId]
+            var lat = message["positionLatitude"]
+            if(lat == null) return;
+            var long = message["positionLongitude"]
+            
+            if(truck == null){
+                truckList[truckId] = new Truck(message)
+                var truckIcon = L.icon({
+                    iconUrl: "/icon_truck.png",
+                    iconSize: [38, 38]
+                });
+                marker = L.marker([lat, long], {icon: truckIcon})
+                truckMarkerList[truckId] = marker
+                marker.addTo(map)
+            }else{
+                marker = truckMarkerList[truckId]
+                truck = truckList[truckId]
+                marker.setLatLng([lat, long])
+                truck.positionLatitude = lat
+                truck.positionLongitude = long 
+                truck.timestamp = new Date(message["timestamp"]).toLocaleDateString('en-US');
+                truck.nextTripLengthPreference = message["nextTripLengthPreference"];
+            }
+        }else if(message["type"]=="Load"){
+            // console.log("Load")
+            var lat = message["originLatitude"]
 
-        var featureGroup = L.featureGroup([marker, circle]).addTo(map)
+            if(lat == null) return;
+            var long = message["originLongitude"]
+            
+            var loadIcon = L.icon({
+                iconUrl: "/icon_load.png",
+                iconSize: [38, 38]
+            });
+
+            var accuracy = 200000
+            marker = L.marker([lat, long], {icon: loadIcon}) 
+            marker.addTo(map)
+            // circle = L.circle([lat, long], {radius: accuracy})
+            // var featureGroup = L.featureGroup([marker, circle]).addTo(map)
+
+        }else{
+            return;
+        }
+
 
         console.log("Your coordinate is: Lat: "+ lat +" Long: "+ long+ " Accuracy: "+ accuracy)
     }
+
+    class Truck {
+        constructor(message) {
+          this.id = message["truckId"];
+          this.timestamp = new Date(message["timestamp"]).toLocaleDateString('en-US');
+          this.positionLatitude = message["positionLatitude"];
+          this.positionLongitude = message["positionLongitude"];
+          this.equipType = message["equipType"];
+          this.nextTripLengthPreference = message["nextTripLengthPreference"];
+        }
+      }
+    class Load {
+        constructor(message) {
+            this.id = message["loadId"];
+            this.timestamp = new Date(message["timestamp"]).toLocaleDateString('en-US');
+            this.originLatitude = message["originLatitude"];
+            this.originLongitude = message["originLongitude"];
+            this.destinationLatitude = message["destinationLatitude"];
+            this.destinationLongitude = message["destinationLongitude"]
+            this.equipmentType = message["equipmentType"];
+            this.price = message["price"];
+            this.mileage = message["mileage"];
+          }
+      }
+      class Notification {
+        constructor(truckId, loadId) {
+          this.truck = truckId;
+          this.load = loadId;
+        }
+      }

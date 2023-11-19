@@ -9,7 +9,7 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 const tcpClient = new net.Socket();
-tcpClient.connect(8080, '127.0.0.1', () => {
+tcpClient.connect(8082, '127.0.0.1', () => {
     console.log('Connected to Python TCP server');
 });
 
