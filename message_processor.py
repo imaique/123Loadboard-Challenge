@@ -16,7 +16,7 @@ from datetime import datetime
 
 
 class Notifier:
-    def __init__(self, collector: StatCollector) -> None:
+    def __init__(self, collector: StatCollector, forwarder: Forwarder) -> None:
         # <truck id,truck object>
         self.trucks: Dict[int, Truck] = {}
         # <truck id, home (lat, long)>
@@ -29,6 +29,7 @@ class Notifier:
         self.notifications: Dict[int, List[Notification]] = {}
 
         self.collector = collector
+        self.forwarder = forwarder
 
     def add_truck(self, truck: Truck) -> None:
         truck_id = truck.truck_id
@@ -57,6 +58,7 @@ class Notifier:
         del dictionary["load"]
         del dictionary["truck"]
         self.collector.add_notification(dictionary)
+        self.forwarder.add_message(dictionary)
 
     def get_recent_notifications(
         self, truck_id: int, current_timestamp: datetime
@@ -138,6 +140,9 @@ class Notifier:
         home_location = self.homes[truck.truck_id]
         job_time = truck.time_to_travel(distance)
 
+        # avg profit
+        # avg time taken
+
         final_distance_from_home = get_miles(
             home_location, load.get_destination_location()
         )
@@ -154,7 +159,7 @@ class MessageProcessor:
     def __init__(self) -> None:
         self.collector = StatCollector()
         self.forwarder = Forwarder()
-        self.notifier = Notifier(self.collector)
+        self.notifier = Notifier(self.collector, self.forwarder)
 
     def add_raw_message(self, message: str):
         json_msg = json.loads(message)
@@ -174,7 +179,7 @@ class MessageProcessor:
             self.forwarder.add_message(message)
             self.collector.add_truck(message)
         elif message_type == "Start":
-            self.notifier = Notifier(self.collector)
+            self.notifier = Notifier(self.collector, self.forwarder)
             self.collector = StatCollector()
         elif message_type == "End":
             self.collector.to_csv()
