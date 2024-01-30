@@ -64,7 +64,7 @@ class GridMap:
         self.grid[row][col].add_load(load)
 
     def get_nearby_price_distance_count(
-        self, location: (float, float, int)
+        self, location: (float, float)
     ) -> (float, float):
         (row, col) = self._get_indices(location)
         min_row = max(0, row - self.radius_count)
